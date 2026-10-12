@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Flag Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: one centered column, like a signal card held up — flag big, four answer buttons below, progress as a row of pennants */
+:root{
+  --bg:#EEF2F7; --card:#FFFFFF; --ink:#0F1E36; --muted:#5B6B84; --line:#D5DDE9;
+  --accent:#F2B705; --accent-ink:#0F1E36; --good:#1E8E4E; --good-bg:#DDF3E5; --bad:#C2352B; --bad-bg:#FBE2DF;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --emoji:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1424; --card:#14213A; --ink:#E9EEF6; --muted:#9AA9C2; --line:#2B3C60;
+  --accent:#F5C534; --accent-ink:#0B1424; --good:#4CC27F; --good-bg:#123826; --bad:#F07065; --bad-bg:#43191A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1424; --card:#14213A; --ink:#E9EEF6; --muted:#9AA9C2; --line:#2B3C60;
+  --accent:#F5C534; --accent-ink:#0B1424; --good:#4CC27F; --good-bg:#123826; --bad:#F07065; --bad-bg:#43191A; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;padding-inline:16px;padding-block:20px}
+.wrap{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h1{font-family:var(--display);font-weight:800;font-size:2rem;letter-spacing:.02em;text-transform:uppercase;margin:0;line-height:1}
+.score{font-family:var(--display);font-weight:600;font-size:1.25rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+.score b{color:var(--ink)}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.levels button{font:800 1rem var(--display);letter-spacing:.05em;text-transform:uppercase;padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.levels button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.levels button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.modes{display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.modes button{font:600 1rem var(--body);border:0;border-radius:9px;padding:9px;background:transparent;color:var(--muted);cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.modes button:focus-visible,.chip:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.settings{align-items:stretch;gap:18px}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:600 .95rem var(--body);padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.range{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.range label{color:var(--muted)}
+select{font:600 1rem var(--body);padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.match{margin:0;color:var(--muted);text-align:center}
+.match b{color:var(--ink);font-variant-numeric:tabular-nums}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:8px}
+.lives{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hearts{display:flex;gap:6px}
+.hearts svg{width:22px;height:22px;display:block}
+.hearts .full{fill:var(--bad)} .hearts .lost{fill:none;stroke:var(--line);stroke-width:2}
+.tier{font:800 1rem var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tier b{color:var(--ink)}
+.best{color:var(--muted)}
+.board{width:100%;display:flex;flex-direction:column;gap:4px;text-align:left}
+.board ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.board li{display:grid;grid-template-columns:2.2em 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--bg);font-variant-numeric:tabular-nums}
+.board li .rk{font:800 1.1rem var(--display);color:var(--muted)}
+.board li .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.board li .sub{display:block;font-weight:400;font-size:.85rem;color:var(--muted)}
+.board li .pt{font:800 1.3rem var(--display)}
+.board li.me{box-shadow:inset 0 0 0 2px var(--accent)}
+.board li:nth-child(1) .rk{color:var(--accent)}
+.boardnote{font-size:.85rem;color:var(--muted);text-align:center;margin:4px 0 0}
+.saveform{width:100%;display:flex;gap:8px}
+.saveform input{flex:1;min-width:0;font:600 1rem var(--body);padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.saveform input:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.saveform .btn{width:auto;margin:0;padding:12px 18px}
+.formmsg{font-size:.9rem;min-height:1.2em;margin:0;text-align:center}
+.rules{margin:0;padding-left:1.2em;text-align:left;display:flex;flex-direction:column;gap:4px;color:var(--ink)}
+.bar{display:flex;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar .ok{background:var(--good)} .bar .no{background:var(--bad)}
+.leveldesc{margin:-6px 0 0;font-size:.9rem;color:var(--muted);text-align:center}
+.pennants{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.pennants span{height:8px;border-radius:2px;background:var(--line)}
+.pennants .ok{background:var(--good)} .pennants .no{background:var(--bad)} .pennants .now{background:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 18px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.label{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.flag{font-size:clamp(6rem,34vw,9rem);line-height:1.1;font-family:var(--emoji)}
+.flagsvg{width:min(100%,270px);max-width:100%;display:block}
+.flagsvg svg,.flagsvg img{width:100%;height:auto;max-height:200px;display:block;filter:drop-shadow(0 0 .6px var(--muted)) drop-shadow(0 5px 10px rgb(15 30 54 / .14))}
+.flagsvg img{width:auto;max-width:100%;margin:0 auto}
+.hint{font-size:.95rem;color:var(--muted);text-align:center}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{font:600 1.02rem/1.25 var(--body);color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:14px 10px;min-height:64px;cursor:pointer;text-wrap:balance;transition:transform .08s,border-color .15s}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt:active:not(:disabled){transform:scale(.97)}
+.opt:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--good-bg);border-color:var(--good);color:var(--good)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.feedback{min-height:1.5em;text-align:center;font-weight:600;margin-top:12px}
+.factbox{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);display:flex;flex-direction:column;gap:4px}
+.factbox .label{font-size:.72rem}
+.fact{color:var(--ink);font-size:.98rem;line-height:1.45;margin:0;text-wrap:pretty}
+.levelup{text-align:center;font:800 1rem var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent);border-radius:10px;padding:8px;margin-top:10px}
+.btn{font:800 1.2rem var(--display);letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:14px;cursor:pointer;width:100%;margin-top:12px}
+.result{text-align:center}
+.big{font-family:var(--display);font-weight:800;font-size:5rem;line-height:1;font-variant-numeric:tabular-nums}
+.missed{width:100%;display:flex;flex-direction:column;gap:6px;text-align:left}
+.missed div{display:flex;gap:12px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--bg)}
+.missed .s{width:54px;flex:none}
+.missed .s img{width:auto;max-width:100%;max-height:40px;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 0 .6px var(--muted))}
+.missed .s svg{width:100%;height:auto;max-height:40px;display:block;filter:drop-shadow(0 0 .6px var(--muted))}
+.credit{font-size:.8rem;color:var(--muted);text-align:center;line-height:1.4}
+.credit a{color:inherit}
+.burst{position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:50}
+.burst i{position:absolute;left:0;top:0;width:8px;height:12px;border-radius:2px;background:var(--c);opacity:0;animation:pop .85s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes pop{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r))}}
+.opt.right.cheer{animation:cheer .45s ease-out}
+@keyframes cheer{0%{transform:scale(1)}40%{transform:scale(1.07)}100%{transform:scale(1)}}
+.card.glow{animation:glow .7s ease-out}
+@keyframes glow{0%{box-shadow:0 0 0 0 var(--good)}100%{box-shadow:0 0 0 14px transparent}}
+.feedback .streak{display:inline-block;margin-left:6px;padding:2px 10px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:800 .95rem var(--display);letter-spacing:.06em;text-transform:uppercase;animation:cheer .45s ease-out}
+@media (prefers-reduced-motion:reduce){.opt{transition:none}.burst{display:none}.opt.right.cheer,.card.glow,.feedback .streak{animation:none}}
+</style>
+
+<div class="wrap">
+  <header><h1>Flag Quiz</h1><div class="score"><span id="scorelabel">Score</span> <b id="score">0</b><span id="outof">/<span id="total">10</span></span></div></header>
+  <div class="modes" id="modes" role="group" aria-label="Mode"><button id="m-quiz" data-m="quiz" aria-pressed="true">Quiz</button><button id="m-practice" data-m="practice" aria-pressed="false">Practice</button><button id="m-challenge" data-m="challenge" aria-pressed="false">Challenge</button></div>
+  <div class="levels" id="levels" role="group" aria-label="Difficulty">
+    <button id="lv-easy" data-l="easy" aria-pressed="true">Easy</button>
+    <button id="lv-medium" data-l="medium" aria-pressed="false">Medium</button>
+    <button id="lv-hard" data-l="hard" aria-pressed="false">Hard</button>
+    <button id="lv-expert" data-l="expert" aria-pressed="false">Expert</button>
+  </div>
+  <p class="leveldesc" id="leveldesc"></p>
+  <div class="pennants" id="pennants"></div>
+  <main id="stage"></main>
+  <footer class="credit">Flag images: country flags from the public-domain svg-country-flags set and <a href="https://flagicons.lipis.dev/" target="_blank" rel="noopener">flag-icons</a>, U.S. state flags from <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a>, and historical and regional flags from <a href="https://flaglog.com/" target="_blank" rel="noopener">The World Flag Chart</a>.</footer>
+</div>
+
+<script>
+/* ---------- drawing helpers (300×200 canvas) ---------- */
+const R=(x,y,w,h,f)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}"/>`;
+const full=f=>R(0,0,300,200,f);
+const hs=c=>c.map((f,k)=>R(0,(k*200/c.length).toFixed(2),300,(200/c.length+.6).toFixed(2),f)).join("");
+const circ=(x,y,r,f)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}"/>`;
+const line=(a,b,c,d,s,w)=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${s}" stroke-width="${w}" stroke-linecap="square"/>`;
+const poly=(pts,f)=>`<polygon points="${pts}" fill="${f}"/>`;
+const cross=(x,y,w,f)=>R(x-w/2,0,w,200,f)+R(0,y-w/2,300,w,f);
+function star(cx,cy,r,f,n=5,ir=.382,rot=-90){const p=[];for(let k=0;k<2*n;k++){const a=(rot+k*180/n)*Math.PI/180,rr=k%2?r*ir:r;p.push((cx+rr*Math.cos(a)).toFixed(1)+","+(cy+rr*Math.sin(a)).toFixed(1))}return poly(p.join(" "),f)}
+const vstripes=(x,y,w,h,n,a,b)=>Array.from({length:n},(_,k)=>R((x+k*w/n).toFixed(2),y,(w/n+.5).toFixed(2),h,k%2?b:a)).join("");
+function ermine(x,y){return circ(x-5,y-9,2.3,"#000")+circ(x,y-12,2.3,"#000")+circ(x+5,y-9,2.3,"#000")+poly(`${x},${y-6} ${x+5},${y+9} ${x},${y+5} ${x-5},${y+9}`,"#000")}
+
+const SVG={
+  // states, provinces, regions
+  texas:()=>full("#BF0A30")+R(0,0,300,100,"#fff")+R(0,0,100,200,"#002868")+star(50,100,34,"#fff"),
+  colorado:()=>hs(["#002868","#fff","#002868"])+`<path d="M164.8 130.9 A48 48 0 1 1 164.8 69.1" fill="none" stroke="#BF0A30" stroke-width="34"/>`+circ(128,100,30,"#FFD700"),
+  alaska:()=>full("#0F204B")+[[48,79],[83,92],[101,110],[119,128],[116,154],[156,166],[172,146]].map(([x,y])=>star(x,y,8.5,"#FFB612")).join("")+star(245,37,14,"#FFB612"),
+  newmexico:()=>{const r="#BF0A30";let s=full("#FFD100")+`<circle cx="150" cy="100" r="14.7" fill="none" stroke="${r}" stroke-width="4"/>`;const o=[-12,-4,4,12],L=[27.5,33,33,27.5],t=4;o.forEach((d,k)=>{const l=L[k],a=(k==0||k==3)?Math.sqrt(16.7*16.7-144):16.7,st=Math.max(a,10.5)-2;s+=R(150+st,100+d-t/2,50-st-(33-l),t,r)+R(150-st-(50-st-(33-l)),100+d-t/2,50-st-(33-l),t,r)+R(150+d-t/2,100-st-(50-st-(33-l)),t,50-st-(33-l),r)+R(150+d-t/2,100+st,t,50-st-(33-l),r)});return s},
+  arizona:()=>{let s=`<defs><clipPath id="az"><rect width="300" height="100"/></clipPath></defs>`+R(0,100,300,100,"#002868")+`<g clip-path="url(#az)">`;for(let k=0;k<13;k++){const a1=Math.PI+k*Math.PI/13,a2=Math.PI+(k+1)*Math.PI/13;s+=poly(`150,100 ${(150+400*Math.cos(a1)).toFixed(1)},${(100+400*Math.sin(a1)).toFixed(1)} ${(150+400*Math.cos(a2)).toFixed(1)},${(100+400*Math.sin(a2)).toFixed(1)}`,k%2?"#FED700":"#BF0A30")}return s+"</g>"+star(150,100,50,"#CE5C17")},
+  tennessee:()=>full("#CC0000")+R(266,0,6,200,"#fff")+R(272,0,28,200,"#002868")+circ(135,100,54,"#fff")+circ(135,100,49,"#002868")+star(117,78,17,"#fff",5,.382,-80)+star(155,92,17,"#fff",5,.382,-80)+star(127,123,17,"#fff",5,.382,-80),
+  puertorico:()=>hs(["#ED0000","#fff","#ED0000","#fff","#ED0000"])+poly("0,0 172,100 0,200","#0050F0")+star(57,100,28,"#fff"),
+  greenland:()=>R(0,0,300,100,"#fff")+R(0,100,300,100,"#C8102E")+`<path d="M50 100 A66.7 66.7 0 0 1 183.4 100Z" fill="#C8102E"/><path d="M50 100 A66.7 66.7 0 0 0 183.4 100Z" fill="#fff"/>`,
+  faroe:()=>full("#fff")+cross(108,100,44,"#003897")+cross(108,100,22,"#D72828"),
+  aland:()=>full("#0053A5")+cross(121,100,59,"#FFCE00")+cross(121,100,23.5,"#D21034"),
+  scotland:()=>full("#005EB8")+line(0,0,300,200,"#fff",34)+line(300,0,0,200,"#fff",34),
+  cornwall:()=>full("#000")+cross(150,100,40,"#fff"),
+  catalonia:()=>hs(Array.from({length:9},(_,k)=>k%2?"#DA121A":"#FCDD09")),
+  basque:()=>full("#D52B1E")+line(0,0,300,200,"#009B48",28)+line(300,0,0,200,"#009B48",28)+cross(150,100,26,"#fff"),
+  galicia:()=>full("#fff")+line(0,0,300,200,"#0099CC",56),
+  bavaria:()=>`<defs><pattern id="bv" width="30" height="34" patternUnits="userSpaceOnUse"><rect width="30" height="34" fill="#fff"/><polygon points="15,0 30,17 15,34 0,17" fill="#0098D4"/></pattern></defs><rect width="300" height="200" fill="url(#bv)"/>`,
+  kurdistan:()=>hs(["#ED2024","#fff","#278E43"])+star(150,100,38,"#FEBD11",21,.6)+circ(150,100,22,"#FEBD11"),
+  brittany:()=>{let s=hs(Array.from({length:9},(_,k)=>k%2?"#fff":"#000"))+R(0,0,125,111.1,"#fff");[[25,[20,52,84,108]],[56,[36,68,100]],[87,[20,52,84,108]]].forEach(([y,xs])=>xs.forEach(x=>s+=ermine(x,y)));return s},
+  // cities
+  chicago:()=>full("#fff")+R(0,30,300,33.4,"#41B6E6")+R(0,136.6,300,33.4,"#41B6E6")+[81,127,173,219].map(x=>star(x,100,23,"#FF0000",6,.5)).join(""),
+  dc:()=>full("#fff")+[65,150,235].map(x=>star(x,35,18,"#E91436")).join("")+R(0,60,300,37,"#E91436")+R(0,118,300,37,"#E91436"),
+  amsterdam:()=>hs(["#EC0000","#000","#EC0000"])+[90,150,210].map(x=>line(x-20,80,x+20,120,"#fff",10)+line(x+20,80,x-20,120,"#fff",10)).join(""),
+  rotterdam:()=>hs(["#00843D","#fff","#00843D"]),
+  hague:()=>hs(["#FFDD00","#009B3A"]),
+  munich:()=>hs(["#000","#FFC72C"]),
+  warsaw:()=>hs(["#FFD200","#E00025"]),
+  krakow:()=>hs(["#fff","#00A0E3"]),
+  barcelona:()=>{const r="#DA121A",y="#FCDD09";return R(0,0,150,100,"#fff")+R(66,0,18,100,r)+R(0,41,150,18,r)+R(150,100,150,100,"#fff")+R(216,100,18,100,r)+R(150,141,150,18,r)+vstripes(150,0,150,100,9,y,r)+vstripes(0,100,150,100,9,y,r)},
+  // historical
+  libya77:()=>full("#009A3A"),
+  svn:()=>full("#FFCD00")+R(0,66.7,300,13.3,"#DA251D")+R(0,93.3,300,13.4,"#DA251D")+R(0,120,300,13.3,"#DA251D"),
+  manchukuo:()=>full("#FFD700")+R(0,0,100,25,"#D52B1E")+R(0,25,100,25,"#0033A0")+R(0,50,100,25,"#fff")+R(0,75,100,25,"#000"),
+  rusemp:()=>hs(["#000","#FFD700","#fff"]),
+  yugo:()=>hs(["#003893","#fff","#DE0000"])+star(150,100,60,"#FCD116")+star(150,100,52,"#DE0000"),
+  egyptk:()=>full("#0F7B3E")+circ(125,100,55,"#fff")+circ(142,100,47,"#0F7B3E")+star(163,72,11,"#fff")+star(178,100,11,"#fff")+star(163,128,11,"#fff"),
+  biafra:()=>{const g="#FFC20E";let s=hs(["#E7262C","#000","#00A651"]);for(let k=0;k<11;k++){const a=(185+k*17)*Math.PI/180,b=1.7*Math.PI/180,x=150,y=118;s+=poly(`${(x+18*Math.cos(a-b)).toFixed(1)},${(y+18*Math.sin(a-b)).toFixed(1)} ${(x+49*Math.cos(a)).toFixed(1)},${(y+49*Math.sin(a)).toFixed(1)} ${(x+18*Math.cos(a+b)).toFixed(1)},${(y+18*Math.sin(a+b)).toFixed(1)}`,g)}return s+`<path d="M134 118 A16 16 0 0 1 166 118Z" fill="${g}"/>`+R(105,120,90,7,g)},
+  ghana64:()=>hs(["#CE1126","#fff","#006B3F"])+star(150,100,30,"#000"),
+  tanganyika:()=>full("#1EB53A")+R(0,68,300,64,"#FCD116")+R(0,76,300,48,"#000"),
+  uar:()=>hs(["#CE1126","#fff","#000"])+star(115,100,22,"#007A3D")+star(185,100,22,"#007A3D"),
+  syemen:()=>hs(["#CE1126","#fff","#000"])+poly("0,0 110,100 0,200","#3E93CF")+star(38,100,22,"#CE1126"),
+  uppervolta:()=>hs(["#000","#fff","#CE1126"]),
+  iraq63:()=>hs(["#CE1126","#fff","#000"])+star(95,100,20,"#007A3D")+star(150,100,20,"#007A3D")+star(205,100,20,"#007A3D"),
+  nyemen:()=>hs(["#CE1126","#fff","#000"])+star(150,100,22,"#007A3D"),
+  benin75:()=>full("#008751")+star(52,48,30,"#E8112D"),
+  congo60:()=>full("#0A7BC1")+star(150,100,58,"#F7D618")+[22,53,84,116,147,178].map(y=>star(28,y,11,"#F7D618")).join(""),
+  burnet:()=>full("#002868")+star(150,104,72,"#FFD100"),
+  mauritania59:()=>full("#00A95C")+circ(150,110,54,"#FFD700")+circ(150,86,50,"#00A95C")+star(150,74,21,"#FFD700"),
+  malawi10:()=>hs(["#CE1126","#000","#339E35"])+star(150,100,46,"#fff",45,.78)+circ(150,100,30,"#fff"),
+  arabrevolt:()=>hs(["#000","#007A3D","#fff"])+poly("0,0 130,100 0,200","#CE1126"),
+  germanemp:()=>hs(["#000","#fff","#DD0000"]),
+  belarus91:()=>hs(["#fff","#C8313E","#fff"]),
+  scg:()=>hs(["#0C4076","#fff","#C6363C"]),
+  sudan56:()=>hs(["#0047AB","#FFD100","#00843D"]),
+};
+
+/* ---------- data ---------- */
+const META={"countries":[["ad","Andorra","Europe"],["ae","United Arab Emirates","Asia"],["af","Afghanistan","Asia"],["ag","Antigua and Barbuda","Americas"],["al","Albania","Europe"],["am","Armenia","Asia"],["ao","Angola","Africa"],["ar","Argentina","Americas"],["at","Austria","Europe"],["au","Australia","Oceania"],["az","Azerbaijan","Asia"],["ba","Bosnia and Herzegovina","Europe"],["bb","Barbados","Americas"],["bd","Bangladesh","Asia"],["be","Belgium","Europe"],["bf","Burkina Faso","Africa"],["bg","Bulgaria","Europe"],["bh","Bahrain","Asia"],["bi","Burundi","Africa"],["bj","Benin","Africa"],["bn","Brunei","Asia"],["bo","Bolivia","Americas"],["br","Brazil","Americas"],["bs","Bahamas","Americas"],["bt","Bhutan","Asia"],["bw","Botswana","Africa"],["by","Belarus","Europe"],["bz","Belize","Americas"],["ca","Canada","Americas"],["cd","DR Congo","Africa"],["cf","Central African Republic","Africa"],["cg","Republic of the Congo","Africa"],["ch","Switzerland","Europe"],["ci","Côte d'Ivoire","Africa"],["cl","Chile","Americas"],["cm","Cameroon","Africa"],["cn","China","Asia"],["co","Colombia","Americas"],["cr","Costa Rica","Americas"],["cu","Cuba","Americas"],["cv","Cape Verde","Africa"],["cy","Cyprus","Europe"],["cz","Czechia","Europe"],["de","Germany","Europe"],["dj","Djibouti","Africa"],["dk","Denmark","Europe"],["dm","Dominica","Americas"],["do","Dominican Republic","Americas"],["dz","Algeria","Africa"],["ec","Ecuador","Americas"],["ee","Estonia","Europe"],["eg","Egypt","Africa"],["er","Eritrea","Africa"],["es","Spain","Europe"],["et","Ethiopia","Africa"],["fi","Finland","Europe"],["fj","Fiji","Oceania"],["fm","Micronesia","Oceania"],["fr","France","Europe"],["ga","Gabon","Africa"],["gb","United Kingdom","Europe"],["gd","Grenada","Americas"],["ge","Georgia","Asia"],["gh","Ghana","Africa"],["gm","Gambia","Africa"],["gn","Guinea","Africa"],["gq","Equatorial Guinea","Africa"],["gr","Greece","Europe"],["gt","Guatemala","Americas"],["gw","Guinea-Bissau","Africa"],["gy","Guyana","Americas"],["hn","Honduras","Americas"],["hr","Croatia","Europe"],["ht","Haiti","Americas"],["hu","Hungary","Europe"],["id","Indonesia","Asia"],["ie","Ireland","Europe"],["il","Israel","Asia"],["in","India","Asia"],["iq","Iraq","Asia"],["ir","Iran","Asia"],["is","Iceland","Europe"],["it","Italy","Europe"],["jm","Jamaica","Americas"],["jo","Jordan","Asia"],["jp","Japan","Asia"],["ke","Kenya","Africa"],["kg","Kyrgyzstan","Asia"],["kh","Cambodia","Asia"],["ki","Kiribati","Oceania"],["km","Comoros","Africa"],["kn","Saint Kitts and Nevis","Americas"],["kp","North Korea","Asia"],["kr","South Korea","Asia"],["kw","Kuwait","Asia"],["kz","Kazakhstan","Asia"],["la","Laos","Asia"],["lb","Lebanon","Asia"],["lc","Saint Lucia","Americas"],["li","Liechtenstein","Europe"],["lk","Sri Lanka","Asia"],["lr","Liberia","Africa"],["ls","Lesotho","Africa"],["lt","Lithuania","Europe"],["lu","Luxembourg","Europe"],["lv","Latvia","Europe"],["ly","Libya","Africa"],["ma","Morocco","Africa"],["mc","Monaco","Europe"],["md","Moldova","Europe"],["me","Montenegro","Europe"],["mg","Madagascar","Africa"],["mh","Marshall Islands","Oceania"],["mk","North Macedonia","Europe"],["ml","Mali","Africa"],["mm","Myanmar","Asia"],["mn","Mongolia","Asia"],["mr","Mauritania","Africa"],["mt","Malta","Europe"],["mu","Mauritius","Africa"],["mv","Maldives","Asia"],["mw","Malawi","Africa"],["mx","Mexico","Americas"],["my","Malaysia","Asia"],["mz","Mozambique","Africa"],["na","Namibia","Africa"],["ne","Niger","Africa"],["ng","Nigeria","Africa"],["ni","Nicaragua","Americas"],["nl","Netherlands","Europe"],["no","Norway","Europe"],["np","Nepal","Asia"],["nr","Nauru","Oceania"],["nz","New Zealand","Oceania"],["om","Oman","Asia"],["pa","Panama","Americas"],["pe","Peru","Americas"],["pg","Papua New Guinea","Oceania"],["ph","Philippines","Asia"],["pk","Pakistan","Asia"],["pl","Poland","Europe"],["pt","Portugal","Europe"],["pw","Palau","Oceania"],["py","Paraguay","Americas"],["qa","Qatar","Asia"],["ro","Romania","Europe"],["rs","Serbia","Europe"],["ru","Russia","Asia"],["rw","Rwanda","Africa"],["sa","Saudi Arabia","Asia"],["sb","Solomon Islands","Oceania"],["sc","Seychelles","Africa"],["sd","Sudan","Africa"],["se","Sweden","Europe"],["sg","Singapore","Asia"],["si","Slovenia","Europe"],["sk","Slovakia","Europe"],["sl","Sierra Leone","Africa"],["sm","San Marino","Europe"],["sn","Senegal","Africa"],["so","Somalia","Africa"],["sr","Suriname","Americas"],["ss","South Sudan","Africa"],["st","São Tomé and Príncipe","Africa"],["sv","El Salvador","Americas"],["sy","Syria","Asia"],["sz","Eswatini","Africa"],["td","Chad","Africa"],["tg","Togo","Africa"],["th","Thailand","Asia"],["tj","Tajikistan","Asia"],["tl","Timor-Leste","Oceania"],["tm","Turkmenistan","Asia"],["tn","Tunisia","Africa"],["to","Tonga","Oceania"],["tr","Türkiye","Asia"],["tt","Trinidad and Tobago","Americas"],["tv","Tuvalu","Oceania"],["tw","Taiwan","Asia"],["tz","Tanzania","Africa"],["ua","Ukraine","Europe"],["ug","Uganda","Africa"],["us","United States","Americas"],["uy","Uruguay","Americas"],["uz","Uzbekistan","Asia"],["va","Vatican City","Europe"],["vc","Saint Vincent and the Grenadines","Americas"],["ve","Venezuela","Americas"],["vn","Vietnam","Asia"],["vu","Vanuatu","Oceania"],["ws","Samoa","Oceania"],["xk","Kosovo","Europe"],["ye","Yemen","Asia"],["za","South Africa","Africa"],["zm","Zambia","Africa"],["zw","Zimbabwe","Africa"]],"regions":[["ai","Anguilla","world"],["aw","Aruba","world"],["bm","Bermuda","world"],["cc","Cocos (Keeling) Islands","world"],["ck","Cook Islands","world"],["cw","Curaçao","world"],["cx","Christmas Island","world"],["fk","Falkland Islands","world"],["gb-eng","England","world"],["gb-wls","Wales","world"],["gg","Guernsey","world"],["gi","Gibraltar","world"],["gs","South Georgia","world"],["hk","Hong Kong","world"],["ic","Canary Islands","world"],["im","Isle of Man","world"],["io","British Indian Ocean Territory","world"],["je","Jersey","world"],["ky","Cayman Islands","world"],["mo","Macau","world"],["mq","Martinique","world"],["ms","Montserrat","world"],["nc","New Caledonia","world"],["nf","Norfolk Island","world"],["nu","Niue","world"],["pf","French Polynesia","world"],["pn","Pitcairn Islands","world"],["sh-ac","Ascension Island","world"],["sh-hl","Saint Helena","world"],["sh-ta","Tristan da Cunha","world"],["sx","Sint Maarten","world"],["tc","Turks and Caicos Islands","world"],["tf","French Southern Lands","world"],["tk","Tokelau","world"],["vg","British Virgin Islands","world"],["us-al","Alabama","us"],["us-as","American Samoa","us"],["us-ct","Connecticut","us"],["us-de","Delaware","us"],["us-fl","Florida","us"],["us-gu","Guam","us"],["us-hi","Hawaii","us"],["us-in","Indiana","us"],["us-la","Louisiana","us"],["us-ma","Massachusetts","us"],["us-md","Maryland","us"],["us-mi","Michigan","us"],["us-mn","Minnesota","us"],["us-mo","Missouri","us"],["us-mp","Northern Mariana Islands","us"],["us-ms","Mississippi","us"],["us-ne","Nebraska","us"],["us-nh","New Hampshire","us"],["us-nj","New Jersey","us"],["us-ny","New York","us"],["us-oh","Ohio","us"],["us-pa","Pennsylvania","us"],["us-ri","Rhode Island","us"],["us-sc","South Carolina","us"],["us-ut","Utah","us"],["us-va","Virginia","us"],["us-vi","U.S. Virgin Islands","us"],["us-vt","Vermont","us"],["us-wa","Washington","us"],["us-wv","West Virginia","us"],["us-wy","Wyoming","us"]]};
+const FL={"hist": [["australia1831.png", "Australia (1831–1901)", ""], ["australia1903.png", "Australia (1903–1908)", ""], ["newzealand1834.png", "New Zealand (1834–1902)", "The former flag of the United Tribes of New Zealand, which remained in use as an unofficial symbol of the country."], ["uvea1858.png", "ʻUvea (1858–1888)", ""], ["uvea1842.png", "ʻUvea (1842–1858)", ""], ["unitedstates1912.png", "United States (1912–1959)", ""], ["unitedstates1877.png", "United States (1877–1890)", ""], ["brazil1889.png", "Brazil (1889–1960)", ""], ["brazil1853.png", "Brazil (1853–1889)", ""], ["mexico1823.png", "Mexico (1823–1880)", "Flown by Republican guerrillas opposed to the Imperial regime."], ["mexico1880.png", "Mexico (1880–1916)", ""], ["peru1825-state.png", "Peru (1825–1950)", "Flown by the government, the navy, the national police, and national sports teams. Raised at major ceremonies. The army uses a similar flag with a different coat of arms."], ["ecuador1900-state.png", "Ecuador (1900–2009)", ""], ["ecuador1860.png", "Ecuador (1860–1900)", ""], ["argentina1840.png", "Argentina (1840–1852)", ""], ["nicaragua1908.png", "Nicaragua (1908–1971)", ""], ["centralamerica1838.png", "Nicaragua (1838–1896)", ""], ["guatemala1858-state.png", "Guatemala (1858–1871)", ""], ["guatemala1843.png", "Guatemala (1843–1851)", ""], ["costarica1848.png", "Costa Rica (1848–1906)", "The most common Costa Rican flag. Officially designated for private citizens, but in practice often used on government buildings and schools too."], ["haiti1810-state.png", "Haiti (1859–1964)", ""], ["haiti1964.png", "Haiti (1964–1986)", ""], ["dominican1863.png", "Dominican Republic (1863–1896)", ""], ["dominican1896.png", "Dominican Republic (1896–1924)", ""], ["venezuela1930.png", "Venezuela (1930–2006)", "Allowed to be flown by anyone."], ["venezuela1954-state.png", "Venezuela (1954–2006)", "Flown by the government and armed forces, and unofficially used by many private citizens."], ["bolivia1851-civil.png", "Bolivia (1851–2004)", "Allowed to be flown by anyone."], ["bolivia1924.png", "Bolivia (1924–2004)", "Flown by the governmnent. The armed forces flew a similar flag with olive and laurel branches around the coat of arms."], ["tunisia1831.png", "Tunisia (1831–1959)", ""], ["tunisia1959.png", "Tunisia (1959–1999)", ""], ["egypt1841.png", "Egypt (1841–1882)", ""], ["egypt1882.png", "Egypt (1882–1923)", ""], ["nejd1750.png", "Nejd (1750–1891)", ""], ["nejd1902.png", "Nejd (1902–1938)", ""], ["morocco1667.png", "Morocco (1667–1915)", "Flown over the palace in Rabat and on ships. Military flags on land were often dectorated with a yellow or green octagram."], ["madagascar1817.png", "Madagascar (1817–1881)", ""], ["madagascar1881.png", "Madagascar (1881–1896)", ""], ["persia1797.png", "Persia (1797–1896)", ""], ["persia1907.png", "Persia (1907–1933)", "Flown by the government, and often by private citizens."], ["sardinia1851.png", "Sardinia (1851–1861)", "Flown by private citizens and merchant ships."], ["modena1830.png", "Modena and Reggio (1830–1859)", ""], ["spain1785.png", "Spain (1874–1931)", ""], ["spain1945.png", "Spain (1945–1977)", ""], ["denmark1748.png", "Denmark (1748–1893)", "Flown by merchant ships and the army. Private citizens were officially banned from flying the flag, but often did it anyway."], ["norway1844-state.png", "Norway (1844–1899)", "Flown only on state-owned buildings and naval ships."], ["greece1822-land.png", "Greece (1822–1970)", "Flown on land within Greece."], ["greece1970.png", "Greece (1970–1975)", "During the rule of the junta, the shade of blue on the national flag was described as notably darker."], ["samos1832.png", "Samos (1832–1912)", ""], ["jersey1841.png", "Jersey (1841–1981)", ""], ["monaco1814.png", "Monaco (1814–1881)", ""], ["sanmarino1862.png", "San Marino (1862–2011)", ""], ["sanmarino1797.png", "San Marino (1797–1862)", ""], ["papalstates1825.png", "Papal States (1825–1870)", ""], ["portugal1830.png", "Portugal (1830–1910)", ""], ["andorra1866.png", "Andorra (1866–1939)", ""], ["andorra1806.png", "Andorra (1806–1866)", ""], ["wales1807.png", "Wales (1807–1953)", ""], ["wales1953.png", "Wales (1953–1959)", ""], ["ireland1798.png", "Ireland (1798–1916)", ""], ["flanders1297.png", "Flanders (1297–1973)", ""], ["ionian1817.png", "Ionian Islands (1817–1864)", ""], ["hesse1839-state.png", "Hesse-Darmstadt (1839–1871)", ""], ["lubeck1670-state.png", "Lübeck (1670–1850)", "Flown by the government."], ["lubeck1850-state.png", "Lübeck (1850–1867)", "Flown by the government."], ["hamburg1835.png", "Hamburg (1835–1867)", ""], ["frankfurt1833.png", "Frankfurt (1833–1866)", ""], ["bremen1806.png", "Bremen (1806–1867)", "The number of stripes could vary but eight was the most common."], ["wurttemburg1817.png", "Württemberg (1817–1871)", "Designated as the official colours of Württemberg. Not technically a national flag, but often used as one. Black and yellow flags were also in use around this time."], ["saxony1815.png", "Saxony (1815–1867)", ""], ["oldenburg1806.png", "Oldenburg (1806–1867)", ""], ["nassau1839.png", "Nassau (1839–1866)", ""], ["heligoland1814.png", "Heligoland (1814–1890)", ""], ["slovakia1848.png", "Slovakia (1848–1918)", "Flown by advocates of Slovakian independence. The \"Upper Hungary\" region did not have an official flag."], ["serbia1838.png", "Serbia (1838–1878)", "Flown the government and armed forces."], ["serbia1882.png", "Serbia (1882–1918)", "Flown the government and armed forces."], ["hungary1867.png", "Hungary (1867–1918)", ""], ["hungary1919.png", "Hungary (1919–1946)", ""], ["romania1965.png", "Romania (1965–1989)", ""], ["romania1848.png", "Romania (1848–1867)", "Flown by advocates of Romanian independence and unification."], ["ukraine1848.png", "Ukraine (1848–1918)", "Flown by Ukrainian nationalists. The order of colours wasn't fixed."], ["ukraine1919.png", "Ukraine (1919–1923)", "Flown by the Ukrainian Socialist Soviet Republic, the government of the Bolshevik-occupied areas of Ukraine during the Russian Civil War."], ["hyderabad1724.png", "Hyderabad (1724–1948)", ""], ["nepal1768.png", "Nepal (1768–1856)", "Nepal's flag started as two pennants which were flown together: the top one representing the king, and the bottom one representing the hereditary prime minister."], ["nepal1856.png", "Nepal (1856–1930)", ""], ["travancore19th.png", "Travancore (1848–1947)", "There was also a red British colonial ensign with a white shell badge."], ["siam1839.png", "Siam (1839–1916)", "Flown by merchant ships."], ["siam1807.png", "Siam (1807–1855)", "Flown by the government."], ["burma1835.png", "Burma (1835–1935)", "Flown by Burmese nationalists. The British colonial government did not have a distinct flag."], ["burma1947.png", "Burma (1947–1974)", ""], ["sarawak1870.png", "Sarawak (1870–1946)", ""], ["sarawak1946.png", "Sarawak (1946–1973)", "Sarawak also had a blue colonial ensign."], ["cuba1849.png", "Cuba (1849–1868)", "Flown by Cuban nationalists and revolutionaries who sought independence from Spain."], ["tuscany1765.png", "Tuscany (1765–1859)", ""], ["naples1738.png", "Two Sicilies (1738–1860)", "Flown by the government and navy."], ["parma1851.png", "Parma and Piacenza (1851–1859)", ""], ["japan1854.png", "Japan (1854–1999)", "Heavily restricted under U.S. Occupation."], ["baden1855.png", "Baden (1855–1871)", "Designed to be used as a diplomatic flag. Within the grand duchy, flags were made various configurations of red and yellow stripes."], ["orange1856.png", "Orange Free State (1856–1902)", ""], ["samoa1879.png", "Samoa (1889–1900)", ""], ["samoa1858.png", "Samoa (1858–1872)", ""], ["transvaal1858.png", "South African Republic (1881–1902)", ""], ["italy1861.png", "Italy (1861–1946)", "Flown by private citizens and merchant ships. The \"Italian Social Republic\", the Nazi puppet regime in the north, flew the plain tricolour as a national flag and had a war flag with an eagle gripping a fasces. The anti-fascist Italian partisans flew either plain tricolours or tricolours with a white or red star on the middle stripe."], ["tonga1862.png", "Tonga (1862–1866)", ""], ["bulgaria1879.png", "Bulgaria (1878–1947)", ""], ["bulgaria1948.png", "Bulgaria (1948–1971)", ""], ["china1921-nationalist.png", "China (1921–1949)", "Flown by the Nationalist government in Guangzhou, which controlled Southern China."], ["china1862.png", "China (1862–1888)", "Flown by naval ships."], ["anhalt1863.png", "Anhalt (1863–1867)", "The green and white state colours were still unofficially used on some flags."], ["cambodia1863.png", "Cambodia (1863–1948)", ""], ["cambodia1989.png", "Cambodia (1989–1992)", "Flown by the State of Cambodia, the partially-recognized state in control of Phnom Penh."], ["honduras1866-civil.png", "Honduras (1866–1949)", ""], ["germany1867.png", "Germany (1867–1919)", "Flown alongside the swastika flag."], ["puertorico1868.png", "Puerto Rico (1868–1895)", "Flown by Puerto Rican nationalists and revolutionaries who sought independence from Spain."], ["zanzibar1861.png", "Zanzibar (1897–1963)", "Arab monarchies, especially those in and around the Gulf, flew plain red flags from their ships. These weren't quite \"national flags\" in the modern sense, but European powers tended to view them that way."], ["muscat1868.png", "Muscat and Oman (1868–1871)", ""], ["canada1922.png", "Canada (1922–1957)", "Officially only to be flown by civilian ships, but in practice flown widely on land as the national flag."], ["canada1873.png", "Canada (1873–1907)", "An unofficial but widespread national flag."], ["iceland1870.png", "Iceland (1870–1897)", ""], ["iceland1897.png", "Iceland (1897–1915)", ""], ["fiji1871.png", "Fiji (1871–1874)", ""], ["sikkim1877.png", "Sikkim (1877–1967)", ""], ["sikkim1967.png", "Sikkim (1967–1975)", ""], ["bosnia1878a.png", "Bosnia and Herzegovina (1878–1908)", ""], ["bosnia1908.png", "Bosnia and Herzegovina (1908–1918)", ""], ["albania1946.png", "Albania (1946–1992)", ""], ["albania1878.png", "Albania (1878–1912)", "A typical flag flown by Albanian nationalists. The exact design of the eagle was not fixed."], ["mysore1881.png", "Mysore (1881–1947)", ""], ["korea1882.png", "Korea (1882–1919)", "Flown by the Korean independence movement. Banned under Japanese occupation."], ["korea1919.png", "Korea (1919–1942)", "Flown by the Korean independence movement and the unrecognized government-in-exile based in China. Banned under Japanese occupation."], ["congofreestate1879.png", "Congo (1879–1960)", ""], ["congobrazzaville1970.png", "Congo (1970–1991)", ""], ["swaziland1890.png", "Swaziland (1890–1902)", ""], ["galicia1891.png", "Galicia (1891–1984)", ""], ["cookislands1893.png", "Cook Islands (1893–1901)", ""], ["cookislands1973.png", "Cook Islands (1973–1979)", ""], ["laos1893.png", "Laos (1893–1945)", ""], ["laos1947.png", "Laos (1947–1975)", ""], ["malaya1896.png", "Federated Malay States (1896–1950)", ""], ["ethiopia1897.png", "Ethiopia (1897–1987)", "Flown by anyone."], ["ethiopia1975a-state.png", "Ethiopia (1975–1987)", "Occasionally flown by the government."], ["sweden1897-state.png", "Sweden (1897–1905)", "Flown on government buildings. The military continued flying the old three-tailed war flag."], ["crete1898.png", "Crete (1898–1908)", ""], ["philippines1898.png", "Philippines (1898–1920)", "Flown by Philippine nationalists. The Insular Government of the Philippine Islands had no official flag at this time."], ["philippines1920.png", "Philippines (1920–1936)", ""], ["afghanistan1931.png", "Afghanistan (1931–1973)", ""], ["afghanistan1901.png", "Afghanistan (1901–1919)", ""], ["quebec1903.png", "Québec (1903–1948)", ""], ["newfoundland1904.png", "Newfoundland (1904–1934)", "Officially only to be flown civilian ships, but in practice flown widely on land as the national flag."], ["india1931.png", "India (1931–1947)", "The Svaraj (\"self-rule\") flag flown by nationalists and independence activists. British India had several colonial flags. A red civil ensign with the Star of India medal on it was used to represent India at international sporting events and in the League of Nations."], ["india1906.png", "India (1906–1921)", "The \"Calcutta flag\" flown by independence activists. British India had several colonial flags. A red civil ensign with the Star of India medal on it was used to represent India at international sporting events."], ["brunei1906.png", "Brunei (1906–1959)", ""], ["bahrain1950.png", "Bahrain (1950–2002)", ""], ["bahrain1910.png", "Bahrain (1910–1950)", "The number of points could vary. Some flags even had a completely straight-edged stripe."], ["mongolia1945.png", "Mongolia (1945–1992)", ""], ["mongolia1911.png", "Mongolia (1911–1920)", ""], ["southafrica1928.png", "South Africa (1928–1994)", ""], ["southafrica1912.png", "South Africa (1912–1928)", ""], ["qatar1916.png", "Qatar (1916–1933)", ""], ["qatar1933.png", "Qatar (1933–1936)", "The design of the flag wasn't laid down in law, and this may have been one of many variations in use at the time."], ["guam1917.png", "Guam (1917–1948)", ""], ["bukhara1917.png", "Bukhara (1917–1920)", ""], ["khiva1917.png", "Khiva (1917–1920)", ""], ["yemen1927.png", "Yemen (1927–1970)", "Flown in territory controlled by the Royalists during the North Yemen Civil War."], ["yemen1918.png", "Yemen (1918–1927)", ""], ["assyria1918.png", "Assyrians (1918–1968)", ""], ["yugoslavia1946.png", "Yugoslavia (1946–1992)", "Flown by the prince and the military."], ["yugoslavia1918.png", "Yugoslavia (1918–1943)", "Unofficial flag of the merchant fleet."], ["lithuania1918.png", "Lithuania (1918–1988)", "Allowed to be flown by anyone."], ["lithuania1922-state.png", "Lithuania (1922–1940)", "Flown by the President and on state-owned ships."], ["georgia1990.png", "Georgia (1990–2004)", ""], ["georgia1918.png", "Georgia (1918–1921)", ""], ["kurdistan1919.png", "Kurdistan (1919–1924)", ""], ["kurdistan1927.png", "Kurdistan (1927–1932)", ""], ["austria1919-state.png", "Austria (1919–1934)", "Flown by the federal government and the armed forces."], ["austria1934-state.png", "Austria (1934–1938)", "Flown by the federal government and the armed forces."], ["syria1980.png", "Syria (1980–2024)", ""], ["syria1930.png", "Syria (1930–1958)", ""], ["lebanon1920.png", "Lebanon (1920–1943)", ""], ["finland1920-state.png", "Finland (1920–1978)", "Flown by the government, border guard, and public universities. The armed forces fly a version with a swallowtail cut."], ["saar1920.png", "Saar Territory (1920–1935)", ""], ["byelorussia1920.png", "Byelorussia (1920–1923)", "Part of the Soviet Union, which did not yet have a national flag."], ["czechoslovakia1920.png", "Czechoslovakia (1920–1993)", ""], ["danzig1920.png", "Danzig (1920–1939)", ""], ["annam1920.png", "Annam (1920–1945)", "There was also a colonial \"protectorate flag\" which was plain yellow with a French tricolour in the top left corner."], ["liechtenstein1937.png", "Liechtenstein (1937–1982)", ""], ["liechtenstein1921.png", "Liechtenstein (1921–1937)", ""], ["tannutuva1921.png", "Tannu Tuva (1921–1926)", ""], ["aland1922.png", "Åland (1922–1953)", ""], ["indonesia1922a.png", "Indonesia (1922–1928)", "Flown by Indonesian nationalists. The Dutch East Indies did not have an official national flag."], ["ussr1955.png", "Soviet Union (1955–1991)", "The hammer and sickle was only on the front side of the flag."], ["ussr1923.png", "Soviet Union (1923–1955)", ""], ["iraq1924.png", "Iraq (1924–1959)", ""], ["iraq1963.png", "Iraq (1963–1991)", ""], ["alawite1922.png", "Alawite State (1922–1936)", ""], ["tuva1992.png", "Tuva (1992–2002)", ""], ["tannutuva1935.png", "Tuva (1935–1941)", ""], ["algeria1928.png", "Algeria (1928–1963)", "Flown by nationalists and indepenence activists. The French colony in Algeria did not have an official flag."], ["transjordan1928.png", "Transjordan (1928–1939)", ""], ["isleofman1929.png", "Isle of Man (1929–1968)", ""], ["manchukuo1932.png", "Manchukuo (1932–1945)", "Flown by the Japanese puppet state in Manchuria. Most countries did not recognize its independence."], ["persia1933.png", "Iran (1933–1964)", "Flown by the government, and often by private citizens. At sea, and in certain ceremonial settings on land, the ratio was 1:3."], ["romani1933.png", "Romani (1933–1971)", ""], ["saudiarabia1938.png", "Saudi Arabia (1938–1973)", ""], ["saudiarabia1973.png", "Saudi Arabia (1973–1984)", ""], ["saar1947.png", "Saarland (1947–1957)", ""], ["trieste1947.png", "Trieste (1947–1954)", ""], ["ceylon1951.png", "Ceylon (1951–1972)", ""], ["ceylon1948.png", "Ceylon (1948–1951)", ""], ["southvietnam1948.png", "South Vietnam (1948–1975)", ""], ["southvietnam1969-prg.png", "South Vietnam (1969–1976)", "Flag of the Viet Cong. Flown by the communist Provisional Revolutionary Government of the Republic of South Vietnam, which claimed to be the legitimate government of South Vietnam and was recognized by most Eastern Bloc states."], ["bhutan1956.png", "Bhutan (1956–1969)", ""], ["bhutan1949.png", "Bhutan (1949–1956)", "There was apparently only a single physical version of this flag ever made."], ["belize1981.png", "Belize (1981–2019)", ""], ["belize1950.png", "Belize (1950–1981)", ""], ["cambodia1950-issarak.png", "Kampuchea (1979–1989)", "Flown by the United Issarak Front, a communist resistance movement which claimed to be the independent government of Cambodia."], ["kampuchea1976.png", "Kampuchea (1976–1990)", "Flown by the Khmer Rouge government-in-exile, which retained control of Cambodia's UN seat."], ["malaya1950.png", "Malaya (1950–1963)", ""], ["eritrea1952.png", "Eritrea (1952–1977)", "Flag of the Eritrean Liberation Front, which sought independence from Ethiopia. Derived from the previous national flag. The provincial government did not have an official flag."], ["sudan1956.png", "Sudan (1956–1970)", ""], ["cameroon1961.png", "Cameroon (1961–1975)", ""], ["cameroon1957.png", "Cameroon (1957–1961)", ""], ["westindies1958.png", "West Indies Federation (1958–1962)", ""], ["uar1958.png", "United Arab Republic (1958–1972)", ""], ["suriname1959.png", "Suriname (1959–1975)", ""], ["netherlandsantilles1959.png", "Netherlands Antilles (1959–1986)", ""], ["netherlandsantilles1986.png", "Netherlands Antilles (1986–2010)", ""], ["mauritania1959.png", "Mauritania (1959–2017)", ""], ["uppervolta1959.png", "Upper Volta (1959–1984)", ""], ["eastgermany1959.png", "East Germany (1959–1990)", ""], ["cyprus1960a.png", "Cyprus (1960–2006)", ""], ["congoleopoldville1960.png", "Congo-Léopoldville (1960–1963)", ""], ["tanganyika1961.png", "Tanganyika (1961–1964)", ""], ["canaryislands1961.png", "Canary Islands (1961–1982)", ""], ["papuanewguinea1962.png", "Papua and New Guinea (1962–1971)", "Flown unofficially, mostly at sporting events"], ["northyemen1962.png", "North Yemen (1962–1990)", ""], ["mozambique1962.png", "Mozambique (1962–1975)", "Flag of the Liberation Front of Mozambique, which aimed for independence from Portugal. Direct predecessor of the modern flag of Mozambique. Portuguese colonies did not have official flags."], ["mozambique1975.png", "Mozambique (1975–1983)", ""], ["burundi1967.png", "Burundi (1967–1982)", ""], ["burundi1962.png", "Burundi (1962–1966)", ""], ["congokinshasa1997.png", "Democratic Republic of the Congo (1997–2006)", ""], ["congokinshasa1966.png", "Democratic Republic of the Congo (1966–1971)", ""], ["comoros1978.png", "Comoros (1978–1992)", ""], ["comoros1963.png", "Comoros (1963–1975)", ""], ["northborneo1963.png", "Sabah (1963–1982)", ""], ["sabah1982.png", "Sabah (1982–1988)", ""], ["micronesia1965.png", "Micronesia (1965–1978)", ""], ["seminole1966.png", "Seminole (1966–1993)", ""], ["lesotho1966.png", "Lesotho (1966–1987)", ""], ["lesotho1987.png", "Lesotho (1987–2006)", ""], ["bermuda1967.png", "Bermuda (1967–1999)", ""], ["saintlucia1967.png", "Saint Lucia (1967–1979)", ""], ["saintkitts1967a.png", "Saint Christopher-Nevis-Anguilla (1967–1983)", ""], ["grenada1967.png", "Grenada (1967–1974)", ""], ["dominica1967.png", "Dominica (1967–1978)", ""], ["dominica1981.png", "Dominica (1981–1988)", ""], ["southyemen1967.png", "South Yemen (1967–1990)", ""], ["cherokee1978.png", "Cherokee (1978–1989)", ""], ["cherokee1968.png", "Cherokee (1968–1978)", ""], ["libya1977.png", "Libya (1977–2011)", ""], ["libya1969.png", "Libya (1969–1972)", ""], ["oman1970.png", "Oman (1970–1995)", ""], ["khmer1970.png", "Khmer Republic (1970–1975)", ""], ["zaire1971.png", "Zaire (1971–1997)", ""], ["cnmi1981.png", "Northern Mariana Islands (1981–1995)", ""], ["cnmi1972.png", "Northern Mariana Islands (1972–1981)", ""], ["equatorialguinea1973.png", "Equatorial Guinea (1973–1979)", ""], ["burma1974.png", "Myanmar (1974–2010)", ""], ["capeverde1975.png", "Cape Verde (1975–1992)", ""], ["benin1975.png", "Benin (1975–1990)", ""], ["pohnpei1977.png", "Pohnpei (1977–1992)", ""], ["sapmi1977.png", "Sápmi (1977–1986)", ""], ["seychelles1977.png", "Seychelles (1977–1996)", ""], ["saintvincent1979.png", "Saint Vincent and the Grenadines (1979–1985)", ""], ["gagauzia1990.png", "Gagauzia (1990–1993)", ""], ["kazakhstan1953.png", "Kazakhstan (1953–1992)", "The hammer and sickle was only on the front side of the flag."], ["turkmenistan1953.png", "Turkmenistan (1953–1992)", "The hammer and sickle was only on the front side of the flag."], ["turkmenistan1992.png", "Turkmenistan (1992–1997)", ""], ["kyrgyzstan1952.png", "Kyrgyzstan (1952–1992)", "The hammer and sickle was only on the front side of the flag."], ["kyrgyzstan1992.png", "Kyrgyzstan (1992–2023)", ""], ["tajikistan1953.png", "Tajikistan (1953–1992)", "The hammer and sickle was only on the front side of the flag."], ["mariel1992.png", "Mari El (1992–2006)", ""], ["mariel2006.png", "Mari El (2006–2011)", ""], ["bashkortostan1992.png", "Bashkortostan (1992–2003)", ""], ["komi1994.png", "Komi (1994–1997)", ""], ["belarus1995.png", "Belarus (1995–2012)", ""], ["reunion1996.png", "Réunion (1996–2003)", "An unofficial local flag."], ["saintmartin2007.png", "Saint Martin (2007–2010)", ""]], "regions": [["australia1971-aboriginal.png", "Aboriginal Australians", ""], ["maori1990.png", "Māori", ""], ["rapanui1982.png", "Rapa Nui", ""], ["kosrae1981.png", "Kosrae", ""], ["chuuk1997.png", "Chuuk", ""], ["yap1980.png", "Yap", ""], ["pohnpei1992.png", "Pohnpei", ""], ["australia1992-torres.png", "Torres Strait Islands", ""], ["bougainville1975.png", "Bougainville", ""], ["quebec1948.png", "Québec", ""], ["newfoundland1980.png", "Newfoundland and Labrador", ""], ["nunavut1999.png", "Nunavut", ""], ["acadia1884.png", "Acadia", ""], ["metis1983.png", "Métis", ""], ["haudenosaunee1990.png", "Haudenosaunee", ""], ["cherokee1989.png", "Cherokee", ""], ["navajo1968.png", "Navajo", ""], ["frenchguiana1967.png", "Guyane", ""], ["guadeloupe1984.png", "Guadeloupe", "An unofficial flag flown by Guadeloupe nationalists. There is also a rarely used \"heraldic banner\" based on the coat of arms of Pointe-à-Pitre."], ["bonaire1981.png", "Bonaire", ""], ["saba1985.png", "Saba", ""], ["sinteustatius2004.png", "Sint Eustatius", ""], ["barbuda1997.png", "Barbuda", ""], ["amazigh1997.png", "Amazigh", ""], ["assyria1968.png", "Assyrians", ""], ["zanzibar2005.png", "Zanzibar", ""], ["azores1979.png", "Azores", ""], ["madeira1978.png", "Madeira", ""], ["corsica1755.png", "Corsica", ""], ["flanders1973.png", "Flanders", ""], ["wallonia1913.png", "Wallonia", ""], ["sicily2000.png", "Sicily", ""], ["sapmi1986.png", "Sápmi", ""], ["adygea1992.png", "Adygea", ""], ["tatarstan1991.png", "Tatarstan", ""], ["chuvashia1992.png", "Chuvashia", ""], ["mariel2011.png", "Mari El", ""], ["udmurtia1992.png", "Udmurtia", ""], ["gagauzia1995.png", "Gagauzia", ""], ["bashkortostan2003.png", "Bashkortostan", ""], ["komi1997.png", "Komi", ""], ["karelia1993.png", "Karelia", ""], ["szekely2004.png", "Székely Land", ""], ["kalmykia1993.png", "Kalmykia", ""], ["karakalpakstan1992.png", "Karakalpakstan", ""], ["buryatia1992.png", "Buryatia", ""], ["tuva2002.png", "Tuva", ""], ["sakha1992.png", "Sakha", ""], ["altai1994.png", "Altai", ""], ["jao1996.png", "Jewish Autonomous Region", ""], ["reunion2003.png", "Réunion", "A popular but unofficial local flag flown by some municipalities."], ["sarawak1988.png", "Sarawak", ""], ["sabah1988.png", "Sabah", ""], ["romani1971.png", "Romani", ""]]};
+const CONT={"rc": {"ai": "Americas", "aw": "Americas", "bm": "Americas", "cc": "Asia", "ck": "Oceania", "cw": "Americas", "cx": "Asia", "fk": "Americas", "gb-eng": "Europe", "gb-wls": "Europe", "gg": "Europe", "gi": "Europe", "gs": "Americas", "hk": "Asia", "ic": "Africa", "im": "Europe", "io": "Asia", "je": "Europe", "ky": "Americas", "mo": "Asia", "mq": "Americas", "ms": "Americas", "nc": "Oceania", "nf": "Oceania", "nu": "Oceania", "pf": "Oceania", "pn": "Oceania", "sh-ac": "Africa", "sh-hl": "Africa", "sh-ta": "Africa", "sx": "Americas", "tc": "Americas", "tf": "Other", "tk": "Oceania", "vg": "Americas", "us-al": "Americas", "us-as": "Oceania", "us-ct": "Americas", "us-de": "Americas", "us-fl": "Americas", "us-ga": "Americas", "us-gu": "Oceania", "us-hi": "Americas", "us-in": "Americas", "us-la": "Americas", "us-ma": "Americas", "us-md": "Americas", "us-mi": "Americas", "us-mn": "Americas", "us-mo": "Americas", "us-mp": "Oceania", "us-ms": "Americas", "us-ne": "Americas", "us-nh": "Americas", "us-nj": "Americas", "us-ny": "Americas", "us-oh": "Americas", "us-pa": "Americas", "us-ri": "Americas", "us-sc": "Americas", "us-ut": "Americas", "us-va": "Americas", "us-vi": "Americas", "us-vt": "Americas", "us-wa": "Americas", "us-wv": "Americas", "us-wy": "Americas"}, "fc": {"australia1831.png": "Oceania", "australia1903.png": "Oceania", "newzealand1834.png": "Oceania", "uvea1858.png": "Oceania", "uvea1842.png": "Oceania", "unitedstates1912.png": "Americas", "unitedstates1877.png": "Americas", "brazil1889.png": "Americas", "brazil1853.png": "Americas", "mexico1823.png": "Americas", "mexico1880.png": "Americas", "peru1825-state.png": "Americas", "ecuador1900-state.png": "Americas", "ecuador1860.png": "Americas", "argentina1840.png": "Americas", "nicaragua1908.png": "Americas", "centralamerica1838.png": "Americas", "guatemala1858-state.png": "Americas", "guatemala1843.png": "Americas", "costarica1848.png": "Americas", "haiti1810-state.png": "Americas", "haiti1964.png": "Americas", "dominican1863.png": "Americas", "dominican1896.png": "Americas", "venezuela1930.png": "Americas", "venezuela1954-state.png": "Americas", "bolivia1851-civil.png": "Americas", "bolivia1924.png": "Americas", "tunisia1831.png": "Asia", "tunisia1959.png": "Asia", "egypt1841.png": "Asia", "egypt1882.png": "Asia", "nejd1750.png": "Asia", "nejd1902.png": "Asia", "morocco1667.png": "Asia", "madagascar1817.png": "Asia", "madagascar1881.png": "Asia", "persia1797.png": "Asia", "persia1907.png": "Asia", "sardinia1851.png": "Europe", "modena1830.png": "Europe", "spain1785.png": "Europe", "spain1945.png": "Europe", "denmark1748.png": "Europe", "norway1844-state.png": "Europe", "greece1822-land.png": "Europe", "greece1970.png": "Europe", "samos1832.png": "Europe", "jersey1841.png": "Europe", "monaco1814.png": "Europe", "sanmarino1862.png": "Europe", "sanmarino1797.png": "Europe", "papalstates1825.png": "Europe", "portugal1830.png": "Europe", "andorra1866.png": "Europe", "andorra1806.png": "Europe", "wales1807.png": "Europe", "wales1953.png": "Europe", "ireland1798.png": "Europe", "flanders1297.png": "Europe", "ionian1817.png": "Europe", "hesse1839-state.png": "Europe", "lubeck1670-state.png": "Europe", "lubeck1850-state.png": "Europe", "hamburg1835.png": "Europe", "frankfurt1833.png": "Europe", "bremen1806.png": "Europe", "wurttemburg1817.png": "Europe", "saxony1815.png": "Europe", "oldenburg1806.png": "Europe", "nassau1839.png": "Europe", "heligoland1814.png": "Europe", "slovakia1848.png": "Europe", "serbia1838.png": "Europe", "serbia1882.png": "Europe", "hungary1867.png": "Europe", "hungary1919.png": "Europe", "romania1965.png": "Europe", "romania1848.png": "Europe", "ukraine1848.png": "Europe", "ukraine1919.png": "Europe", "hyderabad1724.png": "Asia", "nepal1768.png": "Asia", "nepal1856.png": "Asia", "travancore19th.png": "Asia", "siam1839.png": "Asia", "siam1807.png": "Asia", "burma1835.png": "Asia", "burma1947.png": "Asia", "sarawak1870.png": "Asia", "sarawak1946.png": "Asia", "cuba1849.png": "Americas", "tuscany1765.png": "Europe", "naples1738.png": "Europe", "parma1851.png": "Europe", "japan1854.png": "Asia", "baden1855.png": "Europe", "orange1856.png": "Asia", "samoa1879.png": "Oceania", "samoa1858.png": "Oceania", "transvaal1858.png": "Asia", "italy1861.png": "Europe", "tonga1862.png": "Oceania", "bulgaria1879.png": "Europe", "bulgaria1948.png": "Europe", "china1921-nationalist.png": "Asia", "china1862.png": "Asia", "anhalt1863.png": "Europe", "cambodia1863.png": "Asia", "cambodia1989.png": "Asia", "honduras1866-civil.png": "Americas", "germany1867.png": "Europe", "puertorico1868.png": "Americas", "zanzibar1861.png": "Asia", "muscat1868.png": "Asia", "canada1922.png": "Americas", "canada1873.png": "Americas", "iceland1870.png": "Europe", "iceland1897.png": "Europe", "fiji1871.png": "Oceania", "sikkim1877.png": "Asia", "sikkim1967.png": "Asia", "bosnia1878a.png": "Europe", "bosnia1908.png": "Europe", "albania1946.png": "Europe", "albania1878.png": "Europe", "mysore1881.png": "Asia", "korea1882.png": "Asia", "korea1919.png": "Asia", "congofreestate1879.png": "Asia", "congobrazzaville1970.png": "Africa", "swaziland1890.png": "Asia", "galicia1891.png": "Europe", "cookislands1893.png": "Oceania", "cookislands1973.png": "Oceania", "laos1893.png": "Asia", "laos1947.png": "Asia", "malaya1896.png": "Asia", "ethiopia1897.png": "Africa", "ethiopia1975a-state.png": "Africa", "sweden1897-state.png": "Europe", "crete1898.png": "Europe", "philippines1898.png": "Asia", "philippines1920.png": "Asia", "afghanistan1931.png": "Asia", "afghanistan1901.png": "Asia", "quebec1903.png": "Americas", "newfoundland1904.png": "Americas", "india1931.png": "Asia", "india1906.png": "Asia", "brunei1906.png": "Asia", "bahrain1950.png": "Asia", "bahrain1910.png": "Asia", "mongolia1945.png": "Asia", "mongolia1911.png": "Asia", "southafrica1928.png": "Africa", "southafrica1912.png": "Africa", "qatar1916.png": "Asia", "qatar1933.png": "Asia", "guam1917.png": "Oceania", "bukhara1917.png": "Europe", "khiva1917.png": "Europe", "yemen1927.png": "Asia", "yemen1918.png": "Asia", "assyria1918.png": "Asia", "yugoslavia1946.png": "Europe", "yugoslavia1918.png": "Europe", "lithuania1918.png": "Europe", "lithuania1922-state.png": "Europe", "georgia1990.png": "Europe", "georgia1918.png": "Europe", "kurdistan1919.png": "Asia", "kurdistan1927.png": "Asia", "austria1919-state.png": "Europe", "austria1934-state.png": "Europe", "syria1980.png": "Asia", "syria1930.png": "Asia", "lebanon1920.png": "Asia", "finland1920-state.png": "Europe", "saar1920.png": "Europe", "byelorussia1920.png": "Europe", "czechoslovakia1920.png": "Europe", "danzig1920.png": "Europe", "annam1920.png": "Asia", "liechtenstein1937.png": "Europe", "liechtenstein1921.png": "Europe", "tannutuva1921.png": "Asia", "aland1922.png": "Europe", "indonesia1922a.png": "Asia", "ussr1955.png": "Europe", "ussr1923.png": "Europe", "iraq1924.png": "Asia", "iraq1963.png": "Asia", "alawite1922.png": "Asia", "tuva1992.png": "Asia", "tannutuva1935.png": "Asia", "algeria1928.png": "Asia", "transjordan1928.png": "Asia", "isleofman1929.png": "Europe", "manchukuo1932.png": "Asia", "persia1933.png": "Asia", "romani1933.png": "Europe", "saudiarabia1938.png": "Asia", "saudiarabia1973.png": "Asia", "saar1947.png": "Europe", "trieste1947.png": "Europe", "ceylon1951.png": "Asia", "ceylon1948.png": "Asia", "southvietnam1948.png": "Asia", "southvietnam1969-prg.png": "Asia", "bhutan1956.png": "Asia", "bhutan1949.png": "Asia", "belize1981.png": "Americas", "belize1950.png": "Americas", "cambodia1950-issarak.png": "Asia", "kampuchea1976.png": "Asia", "malaya1950.png": "Asia", "eritrea1952.png": "Africa", "sudan1956.png": "Asia", "cameroon1961.png": "Africa", "cameroon1957.png": "Africa", "westindies1958.png": "Americas", "uar1958.png": "Asia", "suriname1959.png": "Americas", "netherlandsantilles1959.png": "Americas", "netherlandsantilles1986.png": "Americas", "mauritania1959.png": "Asia", "uppervolta1959.png": "Africa", "eastgermany1959.png": "Europe", "cyprus1960a.png": "Asia", "congoleopoldville1960.png": "Africa", "tanganyika1961.png": "Africa", "canaryislands1961.png": "Europe", "papuanewguinea1962.png": "Oceania", "northyemen1962.png": "Asia", "mozambique1962.png": "Africa", "mozambique1975.png": "Africa", "burundi1967.png": "Africa", "burundi1962.png": "Africa", "congokinshasa1997.png": "Africa", "congokinshasa1966.png": "Africa", "comoros1978.png": "Asia", "comoros1963.png": "Asia", "northborneo1963.png": "Asia", "sabah1982.png": "Asia", "micronesia1965.png": "Oceania", "seminole1966.png": "Americas", "lesotho1966.png": "Africa", "lesotho1987.png": "Africa", "bermuda1967.png": "Americas", "saintlucia1967.png": "Americas", "saintkitts1967a.png": "Americas", "grenada1967.png": "Americas", "dominica1967.png": "Americas", "dominica1981.png": "Americas", "southyemen1967.png": "Asia", "cherokee1978.png": "Americas", "cherokee1968.png": "Americas", "libya1977.png": "Asia", "libya1969.png": "Asia", "oman1970.png": "Asia", "khmer1970.png": "Asia", "zaire1971.png": "Africa", "cnmi1981.png": "Oceania", "cnmi1972.png": "Oceania", "equatorialguinea1973.png": "Africa", "burma1974.png": "Asia", "capeverde1975.png": "Africa", "benin1975.png": "Africa", "pohnpei1977.png": "Oceania", "sapmi1977.png": "Europe", "seychelles1977.png": "Asia", "saintvincent1979.png": "Americas", "gagauzia1990.png": "Europe", "kazakhstan1953.png": "Asia", "turkmenistan1953.png": "Asia", "turkmenistan1992.png": "Asia", "kyrgyzstan1952.png": "Asia", "kyrgyzstan1992.png": "Asia", "tajikistan1953.png": "Asia", "mariel1992.png": "Europe", "mariel2006.png": "Europe", "bashkortostan1992.png": "Europe", "komi1994.png": "Europe", "belarus1995.png": "Europe", "reunion1996.png": "Asia", "saintmartin2007.png": "Americas", "australia1971-aboriginal.png": "Oceania", "maori1990.png": "Oceania", "rapanui1982.png": "Oceania", "kosrae1981.png": "Oceania", "chuuk1997.png": "Oceania", "yap1980.png": "Oceania", "pohnpei1992.png": "Oceania", "australia1992-torres.png": "Oceania", "bougainville1975.png": "Oceania", "quebec1948.png": "Americas", "newfoundland1980.png": "Americas", "nunavut1999.png": "Americas", "acadia1884.png": "Americas", "metis1983.png": "Americas", "haudenosaunee1990.png": "Americas", "cherokee1989.png": "Americas", "navajo1968.png": "Americas", "frenchguiana1967.png": "Americas", "guadeloupe1984.png": "Americas", "bonaire1981.png": "Americas", "saba1985.png": "Americas", "sinteustatius2004.png": "Americas", "barbuda1997.png": "Americas", "amazigh1997.png": "Asia", "assyria1968.png": "Asia", "zanzibar2005.png": "Africa", "azores1979.png": "Europe", "madeira1978.png": "Europe", "corsica1755.png": "Europe", "flanders1973.png": "Europe", "wallonia1913.png": "Europe", "sicily2000.png": "Europe", "sapmi1986.png": "Europe", "adygea1992.png": "Europe", "tatarstan1991.png": "Europe", "chuvashia1992.png": "Europe", "mariel2011.png": "Europe", "udmurtia1992.png": "Europe", "gagauzia1995.png": "Europe", "bashkortostan2003.png": "Europe", "komi1997.png": "Europe", "karelia1993.png": "Europe", "szekely2004.png": "Europe", "kalmykia1993.png": "Europe", "karakalpakstan1992.png": "Asia", "buryatia1992.png": "Asia", "tuva2002.png": "Asia", "sakha1992.png": "Asia", "altai1994.png": "Asia", "jao1996.png": "Asia", "reunion2003.png": "Asia", "sarawak1988.png": "Asia", "sabah1988.png": "Asia", "romani1971.png": "Europe"}};
+const EASY="us gb fr de it jp cn ca br mx in es il kr ar gr ch se tr jm za eg ke ng sa pt dk fi ua pe cu vn au nz ie nl be at pl no ru th ph pk ma dz tn gh et co cl uy is ir sg my qa ae".split(" ");
+const LOOK={rby:"td ro ad md",rw:"mc id pl at sg",gwo:"ie ci it hu in",pan:"ml gn sn cm gh",nl:"nl lu py hr fr",slav:"ru sk si rs",sc:"au nz tv fj",gc:"co ec ve",cam:"hn ni sv gt",nordic:"is no fi se dk",br:"ht li",ryg:"bo gh lt et",arab:"eg sy iq ye sd jo",pan2:"bj gn ml",star:"so vn",stripes:"us lr my",gul:"tm af",crescent:"tr tn",blue:"bs kz ua",sun:"ar uy",cross:"ch to ge",tri:"am co bo",nlr:"bf ma",moon:"pw bd jp"};
+const groupOf={};for(const[g,cs]of Object.entries(LOOK))for(const c of cs.split(" "))groupOf[c]=groupOf[c]||g;
+// well-known non-country flags count one level easier
+const FAMOUS_REG="England|Wales|Scotland|Greenland|Puerto Rico|Hong Kong|Catalonia|Texas|Alaska|Québec|Hawaii|Florida|New York|Basque Country|Colorado|Arizona|Bavaria".split("|");
+const FAMOUS_HIST="Soviet Union|Yugoslavia|Czechoslovakia|East Germany|Persia|Siam|Ceylon|Burma|Zaire|South Vietnam|Canada|United States|Australia|Libya|Iraq|Russian Empire|German Empire|Germany|Kingdom of Egypt|Belarus|Serbia and Montenegro|Biafra|Manchukuo|Japan|Italy|Brazil|Mexico|South Africa|Afghanistan|Iran".split("|");
+const base=n=>n.replace(/ \(.*\)$/,"");
+
+const COUNTRIES=META.countries.map(([code,name,cont])=>({code,name,cont,kind:"country",src:"c",tier:EASY.includes(code)?"e":"m",diff:EASY.includes(code)?1:2,group:groupOf[code]}));
+const REGIONS=META.regions.map(([code,name,group])=>({code,name,kind:"region",src:"r",group,cont:CONT.rc[code]||"Other"}));
+const US_DRAWN=["texas","colorado","alaska","newmexico","arizona","tennessee","puertorico","dc"];
+const DCONT={texas:"Americas",colorado:"Americas",alaska:"Americas",newmexico:"Americas",arizona:"Americas",tennessee:"Americas",puertorico:"Americas",greenland:"Americas",kurdistan:"Asia",chicago:"Americas",dc:"Americas",egyptk:"Africa",biafra:"Africa",ghana64:"Africa",malawi10:"Africa",burnet:"Americas",arabrevolt:"Asia"};
+const OVERLAP="libya77 svn manchukuo yugo tanganyika uar syemen uppervolta iraq63 nyemen benin75 congo60 mauritania59 germanemp sudan56".split(" ");
+const DRAWN=[["texas","Texas","region","The Lone Star Flag was adopted by the Republic of Texas in 1839."],
+ ["colorado","Colorado","region","The gold disc inside the red C stands for sunshine and gold."],
+ ["alaska","Alaska","region","Designed by 13-year-old Benny Benson in 1927: the Big Dipper and the North Star."],
+ ["newmexico","New Mexico","region","The red sun is the Zia Pueblo's sacred sun symbol."],
+ ["arizona","Arizona","region","Thirteen rays for the original colonies, and a copper star for its mining."],
+ ["tennessee","Tennessee","region","Three stars for the state's three Grand Divisions."],
+ ["puertorico","Puerto Rico","region","The same design as Cuba's flag, with the colors swapped."],
+ ["greenland","Greenland","region","Erfalasorput means \"our flag\" in Greenlandic."],
+ ["faroe","Faroe Islands","region","Merkið, a Nordic cross designed in 1919."],
+ ["aland","Åland","region","Swedish blue and gold with a red cross, for this autonomous Finnish region."],
+ ["scotland","Scotland","region","The Saltire is St Andrew's cross."],
+ ["cornwall","Cornwall","region","St Piran's Flag, named for the patron saint of tin miners."],
+ ["catalonia","Catalonia","region","La Senyera: four red bars on gold."],
+ ["basque","Basque Country","region","The Ikurriña was designed in 1894 by the Arana brothers."],
+ ["galicia","Galicia","region","Its blue diagonal came from an old maritime flag of A Coruña."],
+ ["bavaria","Bavaria","region","The blue-and-white lozenges come from the House of Wittelsbach."],
+ ["kurdistan","Kurdistan Region","region","The sun has 21 rays, for Newroz on March 21."],
+ ["brittany","Brittany","region","Gwenn-ha-du: nine stripes for Brittany's historic dioceses."],
+ ["chicago","Chicago","city","Four stars: Fort Dearborn, the Great Fire, and two world's fairs."],
+ ["dc","Washington, D.C.","city","Based on George Washington's family coat of arms."],
+ ["amsterdam","Amsterdam","city","The three St Andrew's crosses also appear on the city's arms."],
+ ["rotterdam","Rotterdam","city","Green-white-green. Don't mix it up with The Hague's yellow and green."],
+ ["hague","The Hague","city","Yellow over green, flown over the Dutch seat of government."],
+ ["munich","Munich","city","Black and gold, the old colors of the Holy Roman Empire."],
+ ["warsaw","Warsaw","city","Yellow over red, the colors of the city's coat of arms."],
+ ["krakow","Kraków","city","White over blue. Kraków was Poland's royal capital until 1596."],
+ ["barcelona","Barcelona","city","St George's cross quartered with the Catalan Senyera."],
+ ["libya77","Libya (1977–2011)","hist","Gaddafi's plain green flag, the only national flag of a single color."],
+ ["svn","South Vietnam","hist","Flown by the Republic of Vietnam from 1955 to 1975."],
+ ["manchukuo","Manchukuo","hist","Japan's puppet state in Manchuria, 1932–1945."],
+ ["rusemp","Russian Empire","hist","The black, gold and white imperial colors, used 1858–1883."],
+ ["yugo","Yugoslavia","hist","The red star was added after World War II."],
+ ["egyptk","Kingdom of Egypt","hist","Adopted after Egypt's 1922 independence and used until 1958."],
+ ["biafra","Biafra","hist","Flown by the breakaway Republic of Biafra, 1967–1970."],
+ ["ghana64","Ghana (1964–66)","hist","White replaced gold to match the ruling party's colors."],
+ ["tanganyika","Tanganyika","hist","Merged with Zanzibar's colors to form Tanzania's flag."],
+ ["uar","United Arab Republic","hist","Two stars for Egypt and Syria, united 1958–1961."],
+ ["syemen","South Yemen","hist","Flown by the People's Democratic Republic of Yemen until 1990."],
+ ["uppervolta","Upper Volta","hist","Three stripes for the Black, White and Red Volta rivers. Now Burkina Faso."],
+ ["iraq63","Iraq (1963–1991)","hist","Three green stars for a planned union with Egypt and Syria."],
+ ["nyemen","North Yemen","hist","Flag of the Yemen Arab Republic until unification in 1990."],
+ ["benin75","People's Republic of Benin","hist","Used by Marxist Benin from 1975 to 1990."],
+ ["congo60","Congo-Léopoldville","hist","Six small stars for the six provinces at independence in 1960."],
+ ["burnet","Republic of Texas (1836)","hist","The Burnet Flag, replaced by the Lone Star Flag in 1839."],
+ ["mauritania59","Mauritania (1959–2017)","hist","Red stripes were added in 2017 to honor those who died for independence."],
+ ["malawi10","Malawi (2010–12)","hist","A full white sun replaced the rising red sun, then was reversed in 2012."],
+ ["arabrevolt","Arab Revolt","hist","Flown in the 1916 revolt against Ottoman rule. It inspired many Arab flags."],
+ ["germanemp","German Empire","hist","Black, white and red, flown from 1871 to 1918."],
+ ["belarus91","Belarus (1991–95)","hist","White-red-white, replaced after a 1995 referendum."],
+ ["scg","Serbia and Montenegro","hist","The union ended in 2006 when Montenegro voted to leave."],
+ ["sudan56","Sudan (1956–70)","hist","Blue for the Nile, yellow for the desert, green for farmland."]].filter(d=>!OVERLAP.includes(d[0])).map(([code,name,kind,fact])=>({code,name,kind,fact,src:"d",cont:DCONT[code]||"Europe",group:kind==="region"?(US_DRAWN.includes(code)?"us":"world"):kind}));
+DRAWN.find(d=>d.code==="dc").group="us";
+const FLHIST=FL.hist.map(([code,name,fact])=>({code,name,fact,kind:"hist",src:"f",group:"hist",cont:CONT.fc[code]||"Europe"}));
+const FLREG=FL.regions.map(([code,name,fact])=>({code,name,fact,kind:"region",src:"f",group:"world",cont:CONT.fc[code]||"Europe"}));
+const ALL=COUNTRIES.concat(REGIONS,DRAWN,FLHIST,FLREG);
+const FACTS={"ad": "Andorra has two heads of state at once: the President of France and a Spanish bishop.", "ae": "The UAE is a federation of seven emirates, including Dubai and Abu Dhabi.", "af": "Afghanistan changed its national flag more times in the 1900s than any other country.", "ag": "The rising sun on the flag stands for a new era, and the V shape for victory.", "al": "The black double-headed eagle comes from the banner of national hero Skanderbeg.", "am": "Armenia was the first country to make Christianity its state religion, in 301 AD.", "ao": "The half gear and machete stand for industrial workers and farmers.", "ar": "The Sun of May in the middle is modeled on Inti, the Inca sun god.", "at": "Austria's red-white-red is one of the oldest national flags, said to go back to the 1200s.", "au": "The big seven-pointed star has one point for each of the six states and one for the territories.", "az": "Azerbaijan is called the Land of Fire for natural gas fires that have burned for centuries.", "ba": "The yellow triangle mirrors the country's roughly triangular shape on the map.", "bb": "The broken trident stands for Barbados breaking away from its colonial past.", "bd": "The red disc sits a little toward the pole so it looks centered when the flag flies.", "be": "Belgium's official flag is almost square, at a ratio of 13 to 15.", "bf": "Burkina Faso means 'land of upright people'.", "bg": "Bulgaria is one of the world's top producers of rose oil, used in perfume.", "bh": "The five white points stand for the five pillars of Islam.", "bi": "The three stars stand for the national motto: Unity, Work, Progress.", "bj": "Benin's official capital is Porto-Novo, but the government sits in Cotonou.", "bn": "Brunei's sultan has reigned since 1967, one of the longest reigns of any living monarch.", "bo": "Bolivia has two capitals: Sucre and La Paz.", "br": "The stars show the sky over Rio de Janeiro on the morning of 15 November 1889.", "bs": "The black triangle stands for the strength and unity of the Bahamian people.", "bt": "Bhutan measures Gross National Happiness alongside its economy.", "bw": "The blue stands for water and rain, precious in the Kalahari. Botswana's currency, the pula, means 'rain'.", "by": "A red-and-white folk embroidery pattern runs down the side of Belarus's flag.", "bz": "Belize's coat of arms shows two woodcutters, making it one of the few national flags with people on it.", "ca": "Canada's maple leaf flag was raised for the first time on 15 February 1965.", "cd": "DR Congo is the largest country in sub-Saharan Africa.", "cf": "Its designer deliberately combined the French colors with the Pan-African colors.", "cg": "Brazzaville and Kinshasa face each other across the Congo River, the closest pair of capitals after Rome and Vatican City.", "ch": "Switzerland's flag is square. Vatican City's is the only other square national flag.", "ci": "Côte d'Ivoire's flag is Ireland's mirror image, with orange next to the pole.", "cl": "Chile is about 4,300 km long but averages less than 200 km wide.", "cm": "Cameroon is nicknamed 'Africa in miniature' for its huge variety of landscapes.", "cn": "The four small stars all point toward the center of the big one.", "co": "The yellow stripe takes up the entire top half of Colombia's flag.", "cr": "Costa Rica abolished its army in 1948.", "cu": "Cuba's flag was designed in 1849, more than 50 years before independence.", "cv": "The ten stars stand for Cape Verde's ten main islands.", "cy": "Cyprus shows a map of the island on its flag, in copper, which the island was famous for.", "cz": "Czechia kept Czechoslovakia's flag after the country split in 1993.", "de": "Black, red and gold come from the uniforms of volunteers who fought Napoleon in 1813.", "dj": "Lake Assal in Djibouti is the lowest point in Africa.", "dk": "Denmark's Dannebrog is often called the oldest national flag still in use.", "dm": "The parrot on Dominica's flag, the Sisserou, lives nowhere else on Earth.", "do": "Its coat of arms is the only one on a national flag that includes a Bible.", "dz": "Algeria is the largest country in Africa.", "ec": "Ecuador is named after the equator, which runs right through it.", "ee": "Estonia's blue-black-white began as a student society's flag in 1884.", "eg": "The golden eagle in the middle is the Eagle of Saladin.", "er": "The olive branch has 30 leaves, one for each year of the war for independence.", "es": "Red and yellow were chosen in 1785 so Spanish ships were easy to spot at sea.", "et": "Ethiopia's green, yellow and red inspired the flags of many other African countries.", "fi": "Finland is called the land of a thousand lakes. It actually has around 188,000.", "fj": "Fiji's shield shows sugarcane, coconuts and bananas.", "fm": "The four stars stand for Micronesia's four states.", "fr": "The blue-white-red tricolor dates from the French Revolution.", "ga": "Rainforest covers almost 90% of Gabon.", "gb": "The Union Jack combines the crosses of St George, St Andrew and St Patrick.", "gd": "Grenada's flag shows a nutmeg. The island is known as the Spice Isle.", "ge": "Georgia's five-cross flag is based on a medieval design.", "gh": "Ghana was the first colony in sub-Saharan Africa to win independence, in 1957.", "gm": "The blue stripe stands for the Gambia River, which runs the length of the country.", "gn": "Guinea's flag uses the same colors as Mali's, in reverse order.", "gq": "It's the only African country with Spanish as an official language.", "gr": "The nine stripes are said to match the nine syllables of 'Freedom or Death' in Greek.", "gt": "The bird on the flag is a quetzal, which is also the name of Guatemala's money.", "gw": "The black star stands for African unity.", "gy": "Guyana is the only South American country with English as its official language.", "hn": "The five stars stand for the five countries of the old Central American federation.", "hr": "The necktie comes from scarves worn by Croatian soldiers in the 1600s.", "ht": "Haiti became the first independent Black republic in 1804.", "hu": "The Rubik's Cube was invented in Hungary in 1974.", "id": "Indonesia is made up of more than 17,000 islands.", "ie": "Green stands for Catholics, orange for Protestants, and white for peace between them.", "il": "The blue stripes come from the design of a Jewish prayer shawl, the tallit.", "in": "The wheel in the middle, the Ashoka Chakra, has 24 spokes.", "iq": "Iraq's flag carries the words 'God is great' in Arabic.", "ir": "'God is great' is written 22 times along the edges of the green and red stripes.", "is": "Iceland's parliament, founded in 930, is one of the oldest in the world.", "it": "Italy's tricolor was inspired by the French flag that Napoleon's armies brought in 1797.", "jm": "Jamaica's is the only national flag with no red, white or blue.", "jo": "The seven points of the star stand for the seven verses of the Quran's first chapter.", "jp": "Japan's name means 'origin of the sun', which is why its flag is a red sun.", "ke": "The Maasai shield and spears stand for defending freedom.", "kg": "The sun has 40 rays for the 40 tribes united by the hero Manas.", "kh": "Cambodia's flag shows Angkor Wat, the largest religious monument in the world.", "ki": "Kiribati moved the International Date Line in 1995, so it's first to see each new day.", "km": "The four stars stand for the four main islands of the Comoros.", "kn": "Saint Kitts and Nevis is the smallest country in the Western Hemisphere.", "kp": "North Korea's flag was adopted in 1948, the year the country was founded.", "kr": "The four black trigrams stand for heaven, earth, water and fire.", "kw": "Kuwait's dinar is the highest-valued currency unit in the world.", "kz": "Kazakhstan is the largest landlocked country on Earth.", "la": "Laos is the only landlocked country in Southeast Asia.", "lb": "The cedar on Lebanon's flag is mentioned many times in the Bible.", "lc": "The triangles stand for the Pitons, Saint Lucia's twin volcanic peaks.", "li": "Liechtenstein added the crown after the 1936 Olympics showed its flag matched Haiti's.", "lk": "Sri Lanka is one of the biggest tea exporters in the world.", "lr": "The 11 stripes stand for the 11 signers of Liberia's declaration of independence.", "ls": "Lesotho is completely surrounded by South Africa.", "lt": "Lithuania was the first Soviet republic to declare independence, in 1990.", "lu": "Luxembourg's flag looks like the Netherlands' but is longer and uses a lighter blue.", "lv": "Latvia's dark red is so distinctive it's known as 'Latvian red'.", "ly": "More than 90% of Libya is desert.", "ma": "The green star in the middle is the Seal of Solomon.", "mc": "Monaco is the second-smallest country in the world.", "md": "Moldova is home to Mileștii Mici, the world's largest wine cellar.", "me": "Montenegro uses the euro even though it isn't in the European Union.", "mg": "About 90% of Madagascar's wildlife is found nowhere else on Earth.", "mh": "The star has 24 points, one for each of the country's municipalities.", "mk": "Mother Teresa was born in Skopje, North Macedonia's capital.", "ml": "Timbuktu in Mali was a great center of Islamic learning in the 1400s and 1500s.", "mm": "Myanmar moved its capital to Naypyidaw, a city built from scratch, in 2005.", "mn": "Mongolia is the most sparsely populated country in the world.", "mr": "Mauritania added the two red stripes in 2017.", "mt": "The George Cross in the corner was awarded to Malta for its bravery in World War II.", "mu": "Mauritius was the only home of the dodo.", "mv": "The Maldives is the lowest-lying country on Earth.", "mw": "Lake Malawi has more fish species than any other lake in the world.", "mx": "The eagle eating a snake on a cactus comes from the Aztec legend of how Mexico City was founded.", "my": "The 14 stripes stand for Malaysia's 13 states and its federal government.", "mz": "Mozambique's is the only national flag with an assault rifle on it.", "na": "The Namib is thought to be the oldest desert on Earth.", "ne": "The orange circle in the middle stands for the sun.", "ng": "Nigeria has more people than any other country in Africa.", "ni": "The rainbow on Nicaragua's coat of arms makes it one of the few flags with purple.", "nl": "The Dutch flag started out orange, white and blue. The orange was later changed to red.", "no": "Norway has sent London a Christmas tree for Trafalgar Square every year since 1947.", "np": "Nepal's is the only national flag that isn't a rectangle.", "nr": "Nauru is the smallest island country in the world, at 21 km².", "nz": "New Zealand's stars are red with white borders. Australia's similar flag uses white stars.", "om": "Oman's emblem shows a traditional curved dagger, the khanjar, over two crossed swords.", "pa": "The Panama Canal saves ships a trip of roughly 13,000 km around South America.", "pe": "Legend says the colors came from flamingos General San Martín saw on the coast.", "pg": "More than 800 languages are spoken in Papua New Guinea.", "ph": "The Philippines flies its flag upside down, red on top, in times of war.", "pk": "The white stripe stands for Pakistan's religious minorities.", "pl": "The colors come from Poland's coat of arms: a white eagle on a red shield.", "pt": "The golden armillary sphere honors Portugal's Age of Discovery.", "pw": "Palau created the world's first shark sanctuary in 2009.", "py": "Paraguay's flag has a different emblem on each side.", "qa": "Qatar's flag is the longest national flag, 28 units long for every 11 tall.", "ro": "Romania's flag is almost identical to Chad's.", "rs": "Belgrade, Serbia's capital, is one of the oldest cities in Europe.", "ru": "Russia stretches across 11 time zones.", "rw": "Rwanda banned plastic bags in 2008.", "sa": "Saudi Arabia's flag is never flown at half-mast, because it carries a religious creed.", "sb": "The five stars first stood for the country's five districts.", "sc": "The coco de mer palm of the Seychelles has the largest seed of any plant.", "sd": "Sudan has more ancient pyramids than Egypt.", "se": "Sweden celebrates Flag Day on 6 June, its national day.", "sg": "Singapore is one of only three city-states in the world, with Monaco and Vatican City.", "si": "Slovenia's coat of arms shows Mount Triglav, the country's highest peak.", "sk": "The white double cross on Slovakia's shield stands on three blue hills.", "sl": "Freetown, Sierra Leone's capital, was founded as a home for freed enslaved people.", "sm": "San Marino says it is the world's oldest republic, founded in 301 AD.", "sn": "Dakar, Senegal's capital, is the westernmost city on mainland Africa.", "so": "The five points of the star stand for five regions where Somali people live.", "sr": "Suriname is the smallest country in South America.", "ss": "South Sudan is the world's newest country, independent since 2011.", "st": "The equator runs through Rolas, a small island of São Tomé and Príncipe.", "sv": "El Salvador was the first country to make Bitcoin official money, in 2021.", "sy": "This green-white-black flag was first used in 1932 and came back into use after 2024.", "sz": "Eswatini is one of the last absolute monarchies in the world.", "td": "Chad is named after Lake Chad.", "tg": "Togo's flag was designed using the golden ratio.", "th": "Thailand is the only country in Southeast Asia never colonized by a European power.", "tj": "More than 90% of Tajikistan is mountains.", "tl": "Timor-Leste became independent in 2002, the first new country of the 21st century.", "tm": "The stripe on the left shows five traditional carpet patterns.", "tn": "Tunisia's flag was based on the Ottoman flag.", "to": "Tonga's constitution says its flag can never be changed.", "tr": "Istanbul sits on two continents, Europe and Asia.", "tt": "The steelpan drum was invented in Trinidad and Tobago.", "tv": "Tuvalu earns money by selling its .tv internet domain.", "tw": "Taipei 101 was the tallest building in the world from 2004 to 2010.", "tz": "Mount Kilimanjaro in Tanzania is the highest mountain in Africa.", "ua": "Ukraine's blue and yellow are often said to stand for a clear sky over wheat fields.", "ug": "The bird in the middle is a grey crowned crane.", "us": "The 50-star design was made by a 17-year-old, Robert Heft, for a school project.", "uy": "Uruguay won the first FIFA World Cup, in 1930.", "uz": "The 12 stars stand for the months of the year.", "va": "Vatican City is the smallest country in the world.", "vc": "The three green diamonds form a V for Saint Vincent.", "ve": "Angel Falls in Venezuela is the tallest waterfall in the world.", "vn": "Vietnam is one of the biggest coffee producers in the world.", "vu": "The curled pig's tusk on Vanuatu's flag is a traditional symbol of wealth.", "ws": "Samoa jumped across the International Date Line in 2011 and skipped 30 December entirely.", "xk": "Kosovo's flag shows a map of the country under six stars.", "ye": "Shibam in Yemen is called the 'Manhattan of the desert' for its mud-brick tower houses.", "za": "South Africa has three capital cities.", "zm": "Victoria Falls, on Zambia's border, is one of the largest waterfalls in the world.", "zw": "The bird on the flag is a carving found at the ancient ruins of Great Zimbabwe.", "ai": "The three orange dolphins stand for friendship, wisdom and strength.", "aw": "Aruba sits just 29 km off the coast of Venezuela.", "bm": "Bermuda's coat of arms shows the shipwreck of the Sea Venture, which led to its settlement in 1609.", "cc": "The Cocos Islands are a group of 27 coral islands in the Indian Ocean, run by Australia.", "ck": "The Cook Islands have their own government but share citizenship with New Zealand.", "cw": "Curaçao's flag shows two stars for Curaçao and its small neighbor Klein Curaçao.", "cx": "Millions of red crabs migrate across Christmas Island to the sea every year.", "fk": "The Falklands have far more sheep than people.", "gb-eng": "The St George's Cross has been England's flag since the Middle Ages.", "gb-wls": "Wales isn't represented in the Union Jack, so its dragon never made it onto the UK flag.", "gg": "Guernsey is a Crown Dependency, not part of the United Kingdom.", "gi": "Gibraltar is home to Europe's only wild monkeys, the Barbary macaques.", "gs": "Explorer Ernest Shackleton is buried on South Georgia.", "hk": "The white flower on Hong Kong's flag is a bauhinia, first found in Hong Kong.", "ic": "Mount Teide in the Canary Islands is the highest peak in Spain.", "im": "The three-legged triskelion is one of the oldest symbols of the Isle of Man.", "io": "The wavy lines on its flag stand for the Indian Ocean around the Chagos Islands.", "je": "Jersey is a Crown Dependency, not part of the United Kingdom.", "ky": "The Cayman Islands have no income tax.", "mo": "Macau was a Portuguese colony until 1999.", "mq": "Martinique adopted this red, green and black flag in 2023.", "ms": "Montserrat's flag shows Erin, a symbol of Ireland, holding a harp.", "nc": "New Caledonia is surrounded by one of the largest lagoons in the world.", "nf": "The tree on Norfolk Island's flag is a Norfolk Island pine.", "nu": "Niue is one of the largest raised coral islands in the world.", "pf": "French Polynesia is made up of 118 islands, including Tahiti and Bora Bora.", "pn": "Most of the Pitcairn Islands' few dozen residents descend from the Bounty mutineers.", "sh-ac": "Ascension Island sits almost halfway between Africa and South America.", "sh-hl": "Napoleon was exiled to Saint Helena and died there in 1821.", "sh-ta": "Tristan da Cunha is the most remote inhabited island in the world.", "sx": "Sint Maarten shares its island with Saint Martin, which belongs to France.", "tc": "The Turks and Caicos Islands are famous for Grace Bay's white sand beaches.", "tf": "The French Southern Lands have no permanent residents, only scientists and military staff.", "tk": "Tokelau was one of the first places to get nearly all its power from solar energy.", "vg": "The British Virgin Islands use the U.S. dollar as their currency.", "us-al": "Alabama's crimson cross on white was adopted in 1895.", "us-as": "American Samoa is the only U.S. territory south of the equator.", "us-ct": "Connecticut's motto, on the ribbon, means 'He who transplanted still sustains'.", "us-de": "Delaware was the first state to ratify the Constitution, on 7 December 1787, the date on its flag.", "us-fl": "Florida's flag has a red saltire like Alabama's, with the state seal in the middle.", "us-gu": "Guam's flag shows a proa, a traditional Chamorro sailing canoe.", "us-hi": "Hawaii's is the only U.S. state flag with the Union Jack on it.", "us-in": "The 19 stars show that Indiana was the 19th state.", "us-la": "The mother pelican on Louisiana's flag is feeding her chicks.", "us-ma": "The figure on Massachusetts' flag is a Native American holding a bow and arrow.", "us-md": "Maryland's flag comes from the coats of arms of the Calvert and Crossland families.", "us-mi": "The Latin motto on Michigan's flag means 'If you seek a pleasant peninsula, look about you'.", "us-mn": "Minnesota adopted this new flag in 2024. The star stands for the North Star State.", "us-mo": "The 24 stars around Missouri's seal show it was the 24th state.", "us-mp": "The latte stone behind the star is a traditional Chamorro building pillar.", "us-ms": "Mississippi adopted its magnolia flag in 2021 after a public vote.", "us-ne": "Nebraska's state legislature is the only one in the U.S. with a single chamber.", "us-nh": "New Hampshire was the first colony to set up a government independent of Britain, in January 1776.", "us-nj": "The buff color on New Jersey's flag was chosen by George Washington.", "us-ny": "The two figures on New York's flag are Liberty and Justice.", "us-oh": "Ohio's is the only U.S. state flag that isn't a rectangle.", "us-pa": "Pennsylvania's flag shows a ship, a plow and three wheat sheaves.", "us-ri": "The anchor on Rhode Island's flag goes with the state motto, 'Hope'.", "us-sc": "The crescent comes from the caps of South Carolina soldiers in the Revolutionary War.", "us-ut": "Utah adopted this new flag in 2024. The beehive stands for hard work.", "us-va": "Virginia's seal shows Virtue standing over a defeated tyrant.", "us-vi": "The letters V and I on either side of the eagle stand for Virgin Islands.", "us-vt": "Vermont's flag shows a pine tree, a cow and wheat sheaves.", "us-wa": "Washington's is the only U.S. state flag with a green background and the only one showing a president.", "us-wv": "West Virginia's motto means 'Mountaineers are always free'.", "us-wy": "The bison on Wyoming's flag has the state seal branded on its side.", "australia1971-aboriginal.png": "Designed in 1971 by Harold Thomas, it's now an official flag of Australia.", "maori1990.png": "The Tino Rangatiratanga flag was chosen as the national Māori flag in 2009.", "rapanui1982.png": "Rapa Nui, or Easter Island, is famous for its giant moai statues.", "kosrae1981.png": "Kosrae is one of the four states of Micronesia.", "chuuk1997.png": "Chuuk Lagoon is famous for its World War II shipwrecks.", "yap1980.png": "Yap is famous for its giant stone money, called rai.", "pohnpei1992.png": "Pohnpei is home to Nan Madol, an ancient city built on artificial islets.", "australia1992-torres.png": "The white star stands for the island groups of the Torres Strait.", "bougainville1975.png": "Bougainville voted for independence from Papua New Guinea in 2019.", "quebec1948.png": "Québec's flag is called the Fleurdelisé, after its four fleurs-de-lis.", "newfoundland1980.png": "Newfoundland was a separate dominion until it joined Canada in 1949.", "nunavut1999.png": "Nunavut became Canada's newest territory in 1999.", "acadia1884.png": "The Acadian flag is the French tricolor with a gold star for the Virgin Mary.", "metis1983.png": "The infinity sign stands for the joining of two cultures and the Métis people's future.", "haudenosaunee1990.png": "The flag is based on the Hiawatha wampum belt, which records the union of the Five Nations.", "cherokee1989.png": "The seven stars stand for the seven clans of the Cherokee.", "navajo1968.png": "The Navajo Nation is the largest Native American reservation in the U.S.", "frenchguiana1967.png": "Europe launches its rockets from French Guiana.", "guadeloupe1984.png": "Guadeloupe is shaped like a butterfly from above.", "bonaire1981.png": "Bonaire is famous for its pink flamingos and coral reefs.", "saba1985.png": "Saba's airport has one of the shortest commercial runways in the world.", "sinteustatius2004.png": "Sint Eustatius was the first foreign power to salute the U.S. flag, in 1776.", "barbuda1997.png": "Barbuda is home to one of the largest frigatebird colonies in the world.", "amazigh1997.png": "The red symbol is the letter yaz in the Tifinagh alphabet, meaning 'free person'.", "assyria1968.png": "The Assyrian flag shows a sun surrounded by a four-pointed star.", "zanzibar2005.png": "Zanzibar joined Tanganyika in 1964 to form Tanzania.", "azores1979.png": "The nine stars stand for the nine islands of the Azores.", "madeira1978.png": "Cristiano Ronaldo was born on Madeira.", "corsica1755.png": "Napoleon was born in Ajaccio, Corsica.", "flanders1973.png": "The lion of Flanders goes back to the counts of Flanders in the 1100s.", "wallonia1913.png": "The rooster is a symbol of Wallonia, Belgium's French-speaking region.", "sicily2000.png": "The triskelion in the middle has three legs for Sicily's three corners.", "sapmi1986.png": "The circle stands for the sun and the moon in Sámi tradition.", "adygea1992.png": "Adygea is a republic of Russia completely surrounded by Krasnodar Krai.", "tatarstan1991.png": "Kazan, Tatarstan's capital, is over 1,000 years old.", "chuvashia1992.png": "Chuvashia is a republic of Russia on the Volga River.", "mariel2011.png": "Mari El is a republic of Russia on the Volga River.", "udmurtia1992.png": "The Kalashnikov rifle was designed and is made in Izhevsk, Udmurtia's capital.", "gagauzia1995.png": "Gagauzia is an autonomous region of Moldova where most people speak a Turkic language.", "bashkortostan2003.png": "The kurai flower on the flag has seven petals for seven Bashkir tribes.", "komi1997.png": "Komi's Virgin Forests are a UNESCO World Heritage Site.", "karelia1993.png": "Karelia has tens of thousands of lakes.", "szekely2004.png": "Székely Land is a Hungarian-speaking region in Romania.", "kalmykia1993.png": "Kalmykia is the only region in Europe where Buddhism is the main religion.", "karakalpakstan1992.png": "Karakalpakstan includes much of the dried-up Aral Sea.", "buryatia1992.png": "Buryatia lies along the shore of Lake Baikal, the deepest lake in the world.", "tuva2002.png": "Tuva is famous for throat singing.", "sakha1992.png": "Sakha is the largest region of Russia, bigger than Argentina.", "altai1994.png": "The Altai Mountains meet the borders of Russia, China, Mongolia and Kazakhstan.", "jao1996.png": "The Jewish Autonomous Region was set up by the Soviet Union in 1934.", "reunion2003.png": "Réunion's Piton de la Fournaise is one of the most active volcanoes in the world.", "sarawak1988.png": "Sarawak is the largest state in Malaysia.", "sabah1988.png": "Sabah is home to Mount Kinabalu, one of the highest peaks in Southeast Asia.", "romani1971.png": "The wheel stands for the Romani people's history of travel."};
+for(const f of ALL){
+  if(FACTS[f.code]&&(f.src!=="d"||!f.fact))f.fact=FACTS[f.code];
+  else if(f.kind==="hist"&&f.src==="f"){const m=f.name.match(/\((\d{3,4})–(\d{4})\)$/);if(m){const n=m[2]-m[1];f.fact=`This flag was used for ${n} year${n===1?"":"s"}, from ${m[1]} to ${m[2]}.`+(f.fact?" "+f.fact:"")}}
+}
+for(const f of ALL){
+  if(f.kind==="region")f.diff=FAMOUS_REG.includes(f.name)?2:3;
+  else if(f.kind==="city")f.diff=3;
+  else if(f.kind==="hist")f.diff=FAMOUS_HIST.includes(base(f.name))?3:4;
+}
+const DIFFS=["Easy","Medium","Hard","Expert"];
+const CONTS=["Europe","Asia","Africa","Americas","Oceania"];
+const TYPES=[["country","Countries"],["region","States & provinces"],["city","Cities"],["hist","Historical"]];
+const LEVELS={easy:"Well-known countries",medium:`All ${COUNTRIES.length} countries, lookalikes included`,hard:"U.S. states, territories, regions and cities",expert:"Historical flags, mixed with regions and cities"};
+const HINT={country:"Which country flies this flag?",region:"Which state, territory, region or people flies this flag?",city:"Which city flies this flag?",hist:"Which historical state flew this flag?"};
+
+/* ---------- flag files (loaded when needed) ---------- */
+const STORE={c:null,r:null,f:null};const loading={};
+function load(src){if(STORE[src])return Promise.resolve();return loading[src]||(loading[src]=fetch({c:"countries.json",r:"regions.json",f:"flaglog.json"}[src]).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(j=>{STORE[src]=j}))}
+const srcsOf=list=>[...new Set(list.map(f=>f.src).filter(s=>s!=="d"))];
+function drawFlag(f,small){
+  const label=(small?f.name:"Mystery flag").replace(/"/g,"");
+  const cls=small?"s":"flagsvg";
+  if(f.src==="f")return `<span class="${cls}"><img src="${STORE.f[f.code]}" alt="${label}"></span>`;
+  let svg=f.src==="d"?`<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">${SVG[f.code]()}</svg>`:STORE[f.src][f.code];
+  return `<span class="${cls}">${svg.replace("<svg",`<svg role="img" aria-label="${label}"`)}</span>`;
+}
+
+/* ---------- state ---------- */
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let mode="quiz",level="easy",qs=[],i=0,score=0,log=[],total=10,lastPool=null;
+let recent=store.get("fq-recent",[]);
+let streak=0;
+const CHEERS=["Correct!","Nice!","Spot on!","Nailed it!","Yes!","Exactly!"];
+function confetti(el){
+  const r=el.getBoundingClientRect(),b=document.createElement("div");b.className="burst";b.style.left=(r.left+r.width/2)+"px";b.style.top=(r.top+r.height/2)+"px";
+  const cols=["var(--accent)","var(--good)","#E4572E","#2E86DE","#9B59B6","var(--ink)"];
+  for(let k=0;k<22;k++){const p=document.createElement("i"),a=Math.random()*Math.PI*2,d=50+Math.random()*90;p.style.setProperty("--c",cols[k%cols.length]);p.style.setProperty("--x",Math.cos(a)*d+"px");p.style.setProperty("--y",Math.sin(a)*d-40+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");p.style.animationDelay=Math.random()*60+"ms";b.appendChild(p)}
+  document.body.appendChild(b);setTimeout(()=>b.remove(),1000);
+}
+let lives=3,points=0,used=new Set(),best=store.get("fq-best",{points:0,flags:0});
+const CH_STEPS=[0,10,25,45];const tierAt=n=>CH_STEPS.filter(t=>n>=t).length;
+const saveRecent=()=>{recent=recent.slice(-200);store.set("fq-recent",recent)};
+const P=Object.assign({conts:CONTS.slice(),types:["country","region"],min:0,max:3,count:10},store.get("fq-practice",{}));
+
+function pick(pool,n){
+  const fresh=shuffle(pool.filter(f=>!recent.includes(f.code)));
+  const used=shuffle(pool.filter(f=>recent.includes(f.code)));
+  return fresh.concat(used).slice(0,n);
+}
+function levelRound(){
+  const world=ALL.filter(f=>f.kind==="region"&&f.group==="world");
+  const us=ALL.filter(f=>f.group==="us");
+  const cities=DRAWN.filter(d=>d.kind==="city"&&d.group!=="us");
+  if(level==="easy")return pick(COUNTRIES.filter(c=>c.tier==="e"),10);
+  if(level==="medium")return pick(COUNTRIES.filter(c=>c.tier==="m"),10);
+  if(level==="hard")return pick(us,4).concat(pick(world,4),pick(cities,2));
+  return pick(ALL.filter(f=>f.kind==="hist"),6).concat(pick(world.concat(cities),4));
+}
+function practicePool(){
+  const allConts=CONTS.every(c=>P.conts.includes(c));
+  return ALL.filter(f=>P.types.includes(f.kind)&&(allConts||P.conts.includes(f.cont))&&f.diff-1>=P.min&&f.diff-1<=P.max);
+}
+function distractors(q){
+  const pool=mode==="practice"&&lastPool?lastPool:ALL;
+  const same=pool.filter(c=>c!==q&&c.kind===q.kind),any=ALL.filter(c=>c!==q&&c.kind===q.kind);
+  let tiers;
+  if(q.kind==="country")tiers=[q.group&&q.tier==="m"?any.filter(c=>c.group===q.group):[],same.filter(c=>c.cont===q.cont),same,any.filter(c=>c.cont===q.cont),any];
+  else tiers=[same.filter(c=>c.group===q.group&&c.cont===q.cont),same.filter(c=>c.group===q.group),same,any];
+  const out=[];for(const t of tiers)for(const c of shuffle(t))if(out.length<3&&base(c.name)!==base(q.name)&&!out.some(o=>base(o.name)===base(c.name)))out.push(c);
+  return out;
+}
+
+/* ---------- screens ---------- */
+function loadThen(list,fn){
+  const want=srcsOf(list.concat(...list.map(distractors)));
+  if(want.some(s=>!STORE[s]))$("stage").innerHTML=`<div class="card"><div class="label">Loading flags…</div></div>`;
+  const token=Symbol();loadThen.t=token;
+  Promise.all(want.map(load)).then(()=>{if(loadThen.t===token)fn();["c","r","f"].forEach(x=>load(x).catch(()=>{}))})
+  .catch(()=>{$("stage").innerHTML=`<div class="card"><div class="label">Couldn't load the flags</div><button class="btn" id="retry">Try again</button></div>`;$("retry").onclick=()=>{want.forEach(x=>delete loading[x]);loadThen(list,fn)}});
+}
+function begin(list){
+  qs=list;total=qs.length;i=0;score=0;log=[];streak=0;
+  recent.push(...qs.map(f=>f.code));saveRecent();
+  $("score").textContent=0;$("total").textContent=total;
+  // pre-pick options so we know every image the round needs
+  qs.forEach(q=>q._opts=shuffle([q,...distractors(q)]));
+  loadThen(qs.concat(...qs.map(q=>q._opts)),ask);
+}
+function startLevel(){$("leveldesc").textContent=LEVELS[level];lastPool=null;begin(shuffle(levelRound()))}
+function progress(){
+  const el=$("pennants");
+  if(mode==="challenge"){el.className="lives";el.style.gridTemplateColumns="";const heart=c=>`<svg viewBox="0 0 24 24" class="${c}"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 3.1 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3.1 1.7-1.9 3.2-3.1 5.3-3.1 3.6 0 5.8 3.7 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>`;el.innerHTML=`<div class="hearts" aria-label="${lives} lives left">${[0,1,2].map(k=>heart(k<lives?"full":"lost")).join("")}</div><div class="tier">Level <b>${DIFFS[tierAt(log.length)-1]}</b></div>`;return}
+  if(total<=20){el.className="pennants";el.style.gridTemplateColumns=`repeat(${total},1fr)`;el.innerHTML=Array.from({length:total},(_,k)=>`<span class="${k<log.length?(log[k].ok?"ok":"no"):k===i?"now":""}"></span>`).join("")}
+  else{const ok=log.filter(l=>l.ok).length;el.className="bar";el.style.gridTemplateColumns="";el.innerHTML=`<span class="ok" style="width:${ok/total*100}%"></span><span class="no" style="width:${(log.length-ok)/total*100}%"></span>`}
+}
+function ask(){
+  progress();
+  const q=qs[i],opts=q._opts;
+  $("stage").innerHTML=`
+    <div class="card">
+      <div class="label">${mode==="challenge"?`Flag ${i+1} · ${q.diff} pt${q.diff>1?"s":""}`:`Flag ${i+1} of ${total}`}${mode==="practice"?` · ${DIFFS[q.diff-1]}`:""}</div>
+      ${drawFlag(q)}
+      <div class="hint">${HINT[q.kind]}</div>
+    </div>
+    <div class="options" style="margin-top:14px">${opts.map((o,k)=>`<button class="opt" id="opt${k}">${o.name}</button>`).join("")}</div>
+    <div class="feedback" id="fb" aria-live="polite"></div>
+    <div class="factbox" id="factbox" hidden><span class="label">Fun fact</span><p class="fact" id="fact"></p></div>
+    <div class="levelup" id="levelup" hidden></div>
+    <div id="next"></div>`;
+  document.querySelectorAll(".opt").forEach((b,k)=>b.onclick=()=>choose(b,opts[k],q,opts));
+}
+function choose(btn,choice,q,opts){
+  const ok=choice===q;
+  document.querySelectorAll(".opt").forEach((b,k)=>{b.disabled=true;if(opts[k]===q)b.classList.add("right")});
+  if(!ok)btn.classList.add("wrong");
+  if(mode==="challenge"){if(ok){score++;points+=q.diff}else lives--;$("score").textContent=points}
+  else if(ok){score++;$("score").textContent=score}
+  log.push({q,ok});progress();
+  streak=ok?streak+1:0;
+  if(ok){
+    $("fb").textContent=CHEERS[log.length===1?0:Math.random()*CHEERS.length|0];
+    if(streak>=3){const t=document.createElement("span");t.className="streak";t.textContent=`${streak} in a row`;$("fb").appendChild(t)}
+    btn.classList.add("cheer");const card=document.querySelector("#stage .card");if(card)card.classList.add("glow");
+    try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches)confetti(btn)}catch(e){}
+  }else $("fb").textContent=`That's ${q.name}.`;
+  $("fb").style.color=ok?"var(--good)":"var(--bad)";
+  if(q.fact){$("fact").textContent=q.fact;$("factbox").hidden=false}
+  if(mode==="challenge"){
+    const over=lives===0,up=!over&&tierAt(log.length)>tierAt(log.length-1);
+    if(up){$("levelup").textContent=`Level up: ${DIFFS[tierAt(log.length)-1]} flags from here`;$("levelup").hidden=false}
+    $("next").innerHTML=`<button class="btn" id="go">${over?"See results":"Next flag"}</button>`;
+    $("go").onclick=()=>over?challengeOver():nextChallenge();$("go").focus();return;
+  }
+  const last=i===total-1;
+  $("next").innerHTML=`<button class="btn" id="go">${last?"See results":"Next flag"}</button>${mode==="practice"&&!last?`<button class="btn ghost" id="stop">End practice</button>`:""}`;
+  $("go").onclick=()=>{i++;last?results():ask()};$("go").focus();
+  if($("stop"))$("stop").onclick=()=>{total=log.length;$("total").textContent=total;results()};
+}
+function results(){
+  i=total;progress();
+  const missed=log.filter(l=>!l.ok),pct=total?score/total:0;
+  const verdict=pct===1?"Perfect. You know your flags.":pct>=.7?"Strong showing.":pct>=.4?"Not bad. Keep practicing.":"Rough round. Try again!";
+  const nextUp=mode==="quiz"&&{easy:"medium",medium:"hard",hard:"expert"}[level];
+  $("stage").innerHTML=`<div class="card result">
+    <div class="label">Final score · ${mode==="practice"?"practice":level}</div>
+    <div class="big">${score}/${total}</div>
+    <div>${verdict}</div>
+    ${missed.length?`<div class="label" style="margin-top:6px">Flags to study</div><div class="missed">${missed.map(l=>`<div>${drawFlag(l.q,true)}<span>${l.q.name}</span></div>`).join("")}</div>`:""}
+    <button class="btn" id="again">${mode==="practice"?"Practice again":"Play again"}</button>
+    ${mode==="practice"?`<button class="btn ghost" id="settings">Change settings</button>`:""}
+    ${nextUp&&pct>=.7?`<button class="btn ghost" id="up">Try ${nextUp}</button>`:""}
+  </div>`;
+  $("again").onclick=()=>mode==="practice"?startPractice():startLevel();
+  if($("settings"))$("settings").onclick=showSettings;
+  if($("up"))$("up").onclick=()=>setLevel(nextUp);
+}
+
+/* ---------- leaderboard ---------- */
+// One document per player at scores/<their id>, holding their top runs.
+// Falls back to this device when the shared store isn't available.
+const BOARD={db:null,uid:null,canWrite:null,rows:[],ready:false,shared:false};
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let LOCAL=store.get("fq-board",[]);
+function localRows(){return LOCAL.map(r=>Object.assign({},r,{mine:true}))}
+function setRows(rows){BOARD.rows=rows.filter(r=>r&&typeof r.points==="number"&&r.name).sort((a,b)=>b.points-a.points||a.at-b.at);BOARD.ready=true;document.querySelectorAll("[data-board]").forEach(el=>el.innerHTML=boardHTML(+el.dataset.board))}
+async function initBoard(){
+  setRows(localRows());
+  try{
+    if(!window.claude)return;
+    const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(!db||!user)return;
+    const uid=await user.id();if(!uid)return;
+    BOARD.db=db;BOARD.uid=uid;BOARD.shared=true;
+    try{BOARD.canWrite=await user.can("data.write")}catch(e){BOARD.canWrite=null}
+    db.collection("scores").onSnapshot(snap=>{
+      const rows=[];snap.docs.forEach(d=>{const b=d.data()||{};(Array.isArray(b.runs)?b.runs:[]).forEach(r=>rows.push(Object.assign({},r,{mine:d.id===uid})))});
+      setRows(rows);
+    },()=>{BOARD.shared=false;setRows(localRows())});
+  }catch(e){}
+}
+function boardHTML(n){
+  if(!BOARD.ready)return `<p class="boardnote">Loading leaderboard…</p>`;
+  const rows=BOARD.rows.slice(0,n);
+  if(!rows.length)return `<p class="boardnote">No scores yet. Finish a challenge to post the first one.</p>`;
+  return `<ol>${rows.map((r,k)=>`<li class="${r.mine?"me":""}"><span class="rk">${k+1}</span><span class="nm">${esc(r.name)}<span class="sub">${r.flags} flags · reached ${esc(r.reached)}${r.mine?" · you":""}</span></span><span class="pt">${r.points}</span></li>`).join("")}</ol>`+
+  `<p class="boardnote">${BOARD.shared?"Shared with everyone who opens this quiz.":"Saved on this device only."}</p>`;
+}
+async function saveScore(run){
+  const name=run.name;
+  if(BOARD.shared){
+    const ref=BOARD.db.doc("scores/"+BOARD.uid);
+    const snap=await ref.get();
+    const runs=(snap.exists&&Array.isArray(snap.data().runs)?snap.data().runs.slice():[]);
+    runs.push(run);runs.sort((a,b)=>b.points-a.points);
+    await ref.set({runs:runs.slice(0,10)});
+  }else{
+    LOCAL.push(run);LOCAL.sort((a,b)=>b.points-a.points);LOCAL=LOCAL.slice(0,20);store.set("fq-board",LOCAL);setRows(localRows());
+  }
+  store.set("fq-name",name);
+}
+
+/* ---------- challenge ---------- */
+function showChallengeHome(){
+  $("pennants").innerHTML="";$("pennants").className="pennants";$("score").textContent=0;
+  $("stage").innerHTML=`<div class="card">
+    <div class="label">Challenge</div>
+    <ul class="rules"><li>Starts with easy flags and gets harder as you go.</li><li>Easy flags are worth 1 point, Expert flags 4.</li><li>Three misses and the run is over.</li></ul>
+    <button class="btn" id="go">Start challenge</button>
+    <div class="label" style="margin-top:8px">Leaderboard</div>
+    <div class="board" data-board="10">${boardHTML(10)}</div>
+  </div>`;
+  $("go").onclick=startChallenge;
+}
+function startChallenge(){
+  qs=[];i=0;score=0;points=0;lives=3;log=[];used=new Set();lastPool=null;streak=0;
+  $("score").textContent=0;
+  $("stage").innerHTML=`<div class="card"><div class="label">Loading flags…</div></div>`;
+  Promise.all(["c","r","f"].map(load)).then(()=>{if(mode==="challenge")nextChallenge()})
+  .catch(()=>{$("stage").innerHTML=`<div class="card"><div class="label">Couldn't load the flags</div><button class="btn" id="retry">Try again</button></div>`;$("retry").onclick=()=>{["c","r","f"].forEach(x=>delete loading[x]);startChallenge()}});
+}
+function nextChallenge(){
+  const d=tierAt(log.length);
+  // mostly the current level, with an occasional easier flag mixed in
+  const want=d>1&&Math.random()<.2?d-1:d;
+  let pool=ALL.filter(f=>f.diff===want&&!used.has(f.code));
+  if(!pool.length)pool=ALL.filter(f=>f.diff>=d&&!used.has(f.code));
+  if(!pool.length)return challengeOver();
+  const q=pick(pool,1)[0];used.add(q.code);recent.push(q.code);saveRecent();
+  q._opts=shuffle([q,...distractors(q)]);qs.push(q);i=qs.length-1;total=qs.length;ask();
+}
+function challengeOver(){
+  progress();
+  const isBest=points>best.points;
+  if(isBest){best={points,flags:score};store.set("fq-best",best)}
+  const reached=DIFFS[tierAt(log.length)-1];
+  const missed=log.filter(l=>!l.ok);
+  $("stage").innerHTML=`<div class="card result">
+    <div class="label">${isBest?"New personal best":"Challenge over"}</div>
+    <div class="big">${points}</div>
+    <div>${score} flag${score===1?"":"s"} right · reached ${reached}</div>
+    <div class="best">${isBest?"Your best run so far.":`Best: ${best.points} points`}</div>
+    ${true?`<div class="label" style="margin-top:6px">Add your name to the leaderboard</div>
+    <form class="saveform" id="saveform"><label for="pname" class="sr">Your name</label><input id="pname" maxlength="20" autocomplete="nickname" placeholder="Your name" value="${esc(store.get("fq-name",""))}"><button class="btn" id="savebtn" type="submit">Save</button></form>
+    <p class="formmsg" id="formmsg" aria-live="polite"></p>`:""}
+    <div class="label" style="margin-top:6px">Leaderboard</div>
+    <div class="board" data-board="10">${boardHTML(10)}</div>
+    ${missed.length?`<div class="label" style="margin-top:6px">Your three misses</div><div class="missed">${missed.map(l=>`<div>${drawFlag(l.q,true)}<span>${l.q.name}</span></div>`).join("")}</div>`:""}
+    <button class="btn" id="again">Play again</button>
+  </div>`;
+  $("again").onclick=startChallenge;
+  if($("saveform")){
+    if(BOARD.shared&&BOARD.canWrite===false)$("formmsg").textContent="You can view this leaderboard but not post to it. Ask the quiz's owner for Contributor access.";
+    const run={points,flags:score,reached,at:Date.now()};
+    $("saveform").addEventListener("submit",async e=>{
+      e.preventDefault();
+      const name=$("pname").value.trim().replace(/\s+/g," ").slice(0,20);
+      if(!name){$("formmsg").textContent="Type a name first.";$("formmsg").style.color="var(--bad)";$("pname").focus();return}
+      if(name.toLowerCase()==="aaron"&&!$("askaaron")){
+        $("savebtn").disabled=true;$("formmsg").style.color="var(--ink)";
+        $("formmsg").innerHTML=`<span id="askaaron">Are you “Aaron Ball Sack”?</span> <span class="chips" style="justify-content:center;margin-top:8px"><button class="chip" id="aaron-yes" type="button">Yes</button><button class="chip" id="aaron-no" type="button">No</button></span>`;
+        const finish=n=>{$("pname").value=n;$("savebtn").disabled=false;$("saveform").requestSubmit()};
+        $("aaron-yes").onclick=()=>finish("Aaron Ball Sack");
+        $("aaron-no").onclick=()=>finish(name);
+        return;
+      }
+      $("savebtn").disabled=true;$("formmsg").style.color="var(--muted)";$("formmsg").textContent="Saving…";
+      try{await saveScore(Object.assign({name},run));$("saveform").remove();$("formmsg").style.color="var(--good)";$("formmsg").textContent=`Saved as ${name}.`}
+      catch(err){$("savebtn").disabled=false;$("formmsg").style.color="var(--bad)";
+        $("formmsg").textContent=err&&err.code==="invalid_argument"?"You can view this leaderboard but not post to it. Ask the quiz's owner for Contributor access.":err&&err.code==="quota_exceeded"?"The leaderboard is full.":"Couldn't save your score. Check your connection and try again."}
+    });
+  }
+}
+
+/* ---------- practice settings ---------- */
+const chip=(id,label,on)=>`<button class="chip" id="${id}" aria-pressed="${on}">${label}</button>`;
+function showSettings(){
+  $("pennants").innerHTML="";$("pennants").className="pennants";$("score").textContent=0;$("total").textContent="–";
+  const counts=[5,10,20,50,0];
+  $("stage").innerHTML=`<div class="card settings">
+    <fieldset><legend>Regions</legend><div class="chips">${CONTS.map(c=>chip("pc-"+c,c,P.conts.includes(c))).join("")}</div></fieldset>
+    <fieldset><legend>Flag types</legend><div class="chips">${TYPES.map(([k,l])=>chip("pt-"+k,l,P.types.includes(k))).join("")}</div></fieldset>
+    <fieldset><legend>Difficulty</legend><div class="range">
+      <label for="dmin">From</label><select id="dmin">${DIFFS.map((d,k)=>`<option value="${k}"${k===P.min?" selected":""}>${d}</option>`).join("")}</select>
+      <label for="dmax">to</label><select id="dmax">${DIFFS.map((d,k)=>`<option value="${k}"${k===P.max?" selected":""}>${d}</option>`).join("")}</select>
+    </div></fieldset>
+    <fieldset><legend>Questions</legend><div class="chips">${counts.map(n=>chip("pn-"+n,n||"All",P.count===n)).join("")}</div></fieldset>
+    <p class="match" id="match" aria-live="polite"></p>
+    <button class="btn" id="startp">Start practice</button>
+  </div>`;
+  const refresh=()=>{
+    store.set("fq-practice",P);
+    CONTS.forEach(c=>$("pc-"+c).setAttribute("aria-pressed",P.conts.includes(c)));
+    TYPES.forEach(([k])=>$("pt-"+k).setAttribute("aria-pressed",P.types.includes(k)));
+    counts.forEach(n=>$("pn-"+n).setAttribute("aria-pressed",P.count===n));
+    const n=practicePool().length;
+    $("match").innerHTML=n?`<b>${n}</b> flag${n===1?"":"s"} match${n===1?"es":""}. You'll get ${P.count&&P.count<n?P.count:n} questions.`:"No flags match. Add a region, a flag type or more difficulty levels.";
+    $("startp").disabled=!n;
+  };
+  const toggle=(arr,v)=>{const k=arr.indexOf(v);if(k>=0){if(arr.length>1)arr.splice(k,1)}else arr.push(v)};
+  CONTS.forEach(c=>$("pc-"+c).onclick=()=>{toggle(P.conts,c);refresh()});
+  TYPES.forEach(([k])=>$("pt-"+k).onclick=()=>{toggle(P.types,k);refresh()});
+  counts.forEach(n=>$("pn-"+n).onclick=()=>{P.count=n;refresh()});
+  $("dmin").onchange=e=>{P.min=+e.target.value;if(P.max<P.min){P.max=P.min;$("dmax").value=P.max}refresh()};
+  $("dmax").onchange=e=>{P.max=+e.target.value;if(P.min>P.max){P.min=P.max;$("dmin").value=P.min}refresh()};
+  $("startp").onclick=startPractice;
+  refresh();
+}
+function startPractice(){
+  const pool=practicePool();if(!pool.length)return showSettings();
+  lastPool=pool;
+  begin(shuffle(pick(pool,P.count||pool.length)));
+}
+
+/* ---------- mode + level switches ---------- */
+function setLevel(l){level=l;document.querySelectorAll("#levels button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.l===l));startLevel()}
+function setMode(m){
+  mode=m;document.querySelectorAll("#modes button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===m));
+  $("levels").hidden=m!=="quiz";$("leveldesc").hidden=m==="practice";
+  $("outof").hidden=m==="challenge";$("scorelabel").textContent=m==="challenge"?"Points":"Score";
+  if(m==="challenge")$("leveldesc").textContent=`Starts easy and gets harder. Three misses and you're out. Best: ${best.points} points.`;
+  m==="quiz"?startLevel():m==="practice"?showSettings():showChallengeHome();
+}
+document.querySelectorAll("#levels button").forEach(b=>b.onclick=()=>setLevel(b.dataset.l));
+document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+initBoard();
+startLevel();
+</script>
+
+</body>
+</html>
